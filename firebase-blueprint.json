@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile in the app",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["email"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "A saved subject (pet or object) for the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["character", "object"] },
+        "objectCategory": { "type": "string" },
+        "url": { "type": "string" }
+      },
+      "required": ["userId", "name", "type", "url"]
+    },
+    "DestinationResult": {
+      "title": "DestinationResult",
+      "description": "An AI-generated destination photo",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "destination": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "isFavorite": { "type": "boolean" }
+      },
+      "required": ["userId", "destination", "imageUrl", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles"
+    },
+    "/users/{userId}/subjects/{subjectId}": {
+      "schema": { "$ref": "#/entities/Subject" },
+      "description": "Stores user's saved subjects"
+    },
+    "/users/{userId}/destinations/{destinationId}": {
+      "schema": { "$ref": "#/entities/DestinationResult" },
+      "description": "Stores user's saved destinations"
+    }
+  }
+}
