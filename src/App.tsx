@@ -319,15 +319,15 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/5 border border-white/10 mb-2 backdrop-blur-sm shadow-[0_0_40px_rgba(255,255,255,0.1)]"
+            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white border border-[#4E342E]/10 mb-2 shadow-lg"
           >
-            <Plane className="w-8 h-8 text-white/90" />
+            <Plane className="w-8 h-8 text-[#4E342E]" />
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl sm:text-6xl md:text-8xl font-bold tracking-tight leading-none font-serif text-transparent bg-clip-text bg-gradient-to-br from-white to-white/60"
+            className="text-6xl sm:text-7xl md:text-8xl font-display text-transparent bg-clip-text bg-gradient-to-br from-[#4E342E] to-[#8D6E63] drop-shadow-sm"
           >
             PawPassport
           </motion.h1>
@@ -335,7 +335,7 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl md:text-2xl font-serif italic text-white/60 max-w-2xl mx-auto font-light"
+            className="text-xl md:text-2xl font-sans font-medium text-[#6D4C41] max-w-2xl mx-auto"
           >
             Send your furry friends on a global adventure using Gemini 3.1 Flash Image.
           </motion.p>
@@ -358,7 +358,7 @@ export default function App() {
             >
               <div className="rainbow-frame-content p-4 transition-transform duration-300">
                 <div 
-                  className="rounded-xl overflow-hidden mb-5 bg-white/5 border border-white/10"
+                  className="rounded-xl overflow-hidden mb-5 bg-[#F5F5DC] border border-[#D7CCC8]"
                   style={{ aspectRatio: img.aspect_ratio.replace(':', '/') }}
                 >
                   <img 
@@ -368,8 +368,8 @@ export default function App() {
                   />
                 </div>
                 <div className="text-center">
-                  <h3 className="font-medium text-lg tracking-wider text-white/90 uppercase">{img.location}</h3>
-                  <div className="font-serif italic text-sm text-white/50 line-clamp-2 mt-2">
+                  <h3 className="font-display text-xl tracking-wider text-[#4E342E] uppercase">{img.location}</h3>
+                  <div className="font-sans font-medium text-[#8D6E63] text-sm line-clamp-2 mt-2">
                     "{img.template_description}"
                   </div>
                 </div>
@@ -384,10 +384,10 @@ export default function App() {
           transition={{ delay: 0.6 }}
           className="max-w-md mx-auto"
         >
-          <div className="bg-white/5 backdrop-blur-xl p-10 rounded-3xl border border-white/10 text-center shadow-2xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
-            <h2 className="text-2xl font-serif mb-4 text-white relative z-10">Start Your Adventure</h2>
-            <p className="font-serif italic text-white/50 mb-8 relative z-10">
+          <div className="bg-white/80 backdrop-blur-xl p-10 rounded-3xl border border-[#D7CCC8] text-center shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none"></div>
+            <h2 className="text-3xl font-display mb-4 text-[#4E342E] relative z-10">Start Your Adventure</h2>
+            <p className="font-sans font-medium text-[#6D4C41] mb-8 relative z-10">
               Upload a clear photo of your pet to begin their global journey.
             </p>
             
@@ -396,13 +396,13 @@ export default function App() {
                 setUploadType('character');
                 fileInputRef.current?.click();
               }}
-              className="relative z-10 w-full flex items-center justify-center gap-3 py-5 px-8 rounded-2xl bg-white text-black font-bold uppercase tracking-wider hover:bg-white/90 transition-all transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-white/20 focus:outline-none cursor-pointer"
+              className="relative z-10 w-full flex items-center justify-center gap-3 py-5 px-8 rounded-2xl bg-[#4E342E] text-white font-display text-xl tracking-wider hover:bg-[#3E2723] transition-all transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-[#4E342E]/30 focus:outline-none cursor-pointer shadow-lg"
             >
               <Upload className="w-5 h-5" />
               Upload Pet Photo
             </button>
 
-            <div className="relative z-10 mt-8 text-[10px] leading-relaxed text-left text-white/40 space-y-3 font-sans">
+            <div className="relative z-10 mt-8 text-xs leading-relaxed text-left text-[#8D6E63] space-y-3 font-sans font-medium">
               <p>
                 By using this feature, you confirm that you have the necessary rights to any content that you upload. 
                 Do not generate content that infringes on others' intellectual property or privacy rights. 
@@ -437,17 +437,17 @@ export default function App() {
               initial={{ opacity: 0, x: 20, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.9 }}
-              className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white min-w-[280px] sm:min-w-[300px] max-w-[calc(100vw-2rem)]`}
+              className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border border-[#D7CCC8] shadow-lg bg-white min-w-[280px] sm:min-w-[300px] max-w-[calc(100vw-2rem)]`}
             >
               <div className={`p-2 rounded-full ${toast.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
                 {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
               </div>
-              <div className="flex-1 text-sm font-bold leading-tight">
+              <div className="flex-1 text-sm font-sans font-medium text-[#4E342E] leading-tight">
                 {toast.message}
               </div>
               <button 
                 onClick={() => removeToast(toast.id)}
-                className="p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer"
+                className="p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer text-[#4E342E]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -457,55 +457,55 @@ export default function App() {
       </div>
 
       <header className="text-center mb-16 pt-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 border border-white/10 mb-4 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-          <Plane className="w-6 h-6 text-white/80" />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white border border-[#4E342E]/10 mb-4 shadow-sm">
+          <Plane className="w-6 h-6 text-[#4E342E]" />
         </div>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-3 tracking-tight leading-none font-serif text-transparent bg-clip-text bg-gradient-to-br from-white to-white/60">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none font-display text-[#4E342E]">
           PawPassport
         </h1>
-        <p className="text-lg md:text-xl font-serif italic text-white/50 max-w-2xl mx-auto font-light">
+        <p className="text-lg md:text-xl font-sans font-medium text-[#6D4C41] max-w-2xl mx-auto mt-2">
           Send your furry friends on a global adventure with Gemini 3.1 Flash Image
         </p>
       </header>
 
       <AnimatePresence>
         {showKeyDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#FDFBF7]/80 backdrop-blur-md">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-[#12182B] rounded-3xl border border-white/10 shadow-2xl max-w-md w-full p-6 sm:p-8 relative"
+              className="bg-white rounded-3xl border border-[#D7CCC8] shadow-2xl max-w-md w-full p-6 sm:p-8 relative"
             >
               <button 
                 onClick={() => setShowKeyDialog(false)}
-                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-white/60 hover:text-white"
+                className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors cursor-pointer text-[#8D6E63] hover:text-[#4E342E]"
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-500/10 text-orange-400 mb-6 border border-orange-500/20">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#FFE082]/30 text-[#FF8F00] mb-6 border border-[#FFE082]">
                   <Settings className="w-8 h-8" />
                 </div>
-                <h2 className="text-2xl font-serif text-white mb-4">API Key Required</h2>
-                <p className="font-serif italic text-white/60 mb-6">
+                <h2 className="text-2xl font-display text-[#4E342E] mb-4">API Key Required</h2>
+                <p className="font-sans font-medium text-[#6D4C41] mb-6">
                   To generate Gemini 3.1 Flash Image images, you need to select a paid Gemini API key. 
                   This ensures the best performance for your pet's adventure.
                 </p>
                 
-                <div className="bg-white/5 rounded-2xl p-4 mb-8 text-left border border-white/10">
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/50 mb-2 flex items-center gap-2">
+                <div className="bg-[#FFF8E1] rounded-2xl p-4 mb-8 text-left border border-[#FFE082]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF8F00] mb-2 flex items-center gap-2">
                     <Info className="w-3 h-3" /> Important
                   </p>
-                  <p className="text-sm leading-relaxed text-white/80">
+                  <p className="text-sm leading-relaxed text-[#6D4C41]">
                     Please select an API key from a paid Google Cloud project. 
                     You can manage your keys and billing at the{' '}
                     <a 
                       href="https://ai.google.dev/gemini-api/docs/billing" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="underline font-bold hover:text-orange-400 transition-colors"
+                      className="underline font-bold text-[#FF8F00] hover:text-[#FF6F00] transition-colors"
                     >
                       Gemini API Billing docs
                     </a>.
@@ -514,7 +514,7 @@ export default function App() {
 
                 <button 
                   onClick={handleOpenSelectKey}
-                  className="w-full py-4 px-8 rounded-2xl bg-white text-black font-bold uppercase tracking-widest hover:bg-white/90 transition-all transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-white/20 focus:outline-none cursor-pointer"
+                  className="w-full py-4 px-8 rounded-2xl bg-[#4E342E] text-white font-display text-xl tracking-wider hover:bg-[#3E2723] transition-all transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-[#4E342E]/20 focus:outline-none cursor-pointer shadow-lg"
                 >
                   Select API Key
                 </button>
@@ -528,26 +528,26 @@ export default function App() {
         {/* Left Column: Subjects & Config */}
         <div className="lg:col-span-4 space-y-8">
           {/* Subject Manager */}
-          <div className="bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4 flex items-center justify-between text-white">
+          <div className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-[#D7CCC8] shadow-xl">
+            <h2 className="text-2xl font-display mb-4 flex items-center justify-between text-[#4E342E]">
               <span>1. Upload subjects</span>
             </h2>
             <h3 className="mb-4">
-              <span className="text-xs font-mono text-white/50">{characterCount}/5 Pets • {objectCount}/14 Objects</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#8D6E63]">{characterCount}/5 Pets • {objectCount}/14 Objects</span>
             </h3>
             
             <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {subjects.length === 0 && (
-                <div className="text-center py-8 border border-dashed border-white/10 rounded-2xl">
-                  <Camera className="w-8 h-8 mx-auto mb-2 text-white/20" />
-                  <p className="text-sm font-serif italic text-white/50">No subjects added yet</p>
+                <div className="text-center py-8 border border-dashed border-[#D7CCC8] rounded-2xl bg-[#F5F5DC]/30">
+                  <Camera className="w-8 h-8 mx-auto mb-2 text-[#8D6E63]" />
+                  <p className="text-sm font-sans font-medium text-[#8D6E63]">No subjects added yet</p>
                 </div>
               )}
               {subjects.map((s, idx) => (
-                <div key={s.id} className="flex items-center gap-3 p-2 bg-black/20 rounded-xl border border-white/5 group hover:border-white/20 transition-colors">
+                <div key={s.id} className="flex items-center gap-3 p-2 bg-white rounded-xl border border-[#D7CCC8] group shadow-sm hover:border-[#8D6E63] transition-colors">
                   <div className="relative w-12 h-12 flex-shrink-0">
-                    <img src={s.url} alt={s.name} className="w-full h-full object-cover rounded-lg border border-white/10" />
-                    <div className="absolute -top-2 -left-2 bg-indigo-500 text-white text-[10px] font-mono px-1.5 py-0.5 rounded shadow">
+                    <img src={s.url} alt={s.name} className="w-full h-full object-cover rounded-lg border border-[#D7CCC8]" />
+                    <div className="absolute -top-2 -left-2 bg-[#FF8F00] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
                       img_{idx}
                     </div>
                   </div>
@@ -556,13 +556,13 @@ export default function App() {
                       type="text" 
                       value={s.name}
                       onChange={(e) => updateSubjectName(s.id, e.target.value)}
-                      className="w-full bg-transparent text-sm font-bold text-white focus:outline-none border-b border-transparent focus:border-white/30 focus:ring-2 focus:ring-white/10 rounded px-1 transition-all"
+                      className="w-full bg-transparent text-sm font-bold text-[#4E342E] focus:outline-none border-b border-transparent focus:border-[#FF8F00] focus:ring-2 focus:ring-[#FF8F00]/20 rounded px-1 transition-all"
                     />
-                    <div className="text-[10px] uppercase tracking-widest text-white/50 px-1 mt-0.5">{s.type}</div>
+                    <div className="text-[10px] uppercase tracking-widest text-[#8D6E63] px-1 mt-0.5">{s.type}</div>
                   </div>
                   <button 
                     onClick={() => removeSubject(s.id)}
-                    className="p-2 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 rounded-lg focus:opacity-100 focus:ring-2 focus:ring-red-500/50 focus:outline-none cursor-pointer"
+                    className="p-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 rounded-lg focus:opacity-100 focus:ring-2 focus:ring-red-500/50 focus:outline-none cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -577,7 +577,7 @@ export default function App() {
                   setUploadType('character');
                   fileInputRef.current?.click();
                 }}
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/20 font-bold text-xs uppercase tracking-wider text-white hover:bg-white hover:text-black transition-colors disabled:opacity-30 focus:ring-2 focus:ring-white/50 focus:outline-none cursor-pointer"
+                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-[#D7CCC8] bg-[#F5F5DC] font-display text-lg tracking-wider text-[#4E342E] hover:bg-[#EFEBE0] hover:shadow-sm transition-all disabled:opacity-50 focus:ring-2 focus:ring-[#4E342E]/30 focus:outline-none cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add Pet
               </button>
@@ -587,7 +587,7 @@ export default function App() {
                   setUploadType('object');
                   fileInputRef.current?.click();
                 }}
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/20 font-bold text-xs uppercase tracking-wider text-white hover:bg-white hover:text-black transition-colors disabled:opacity-30 focus:ring-2 focus:ring-white/50 focus:outline-none cursor-pointer"
+                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-[#D7CCC8] bg-[#F5F5DC] font-display text-lg tracking-wider text-[#4E342E] hover:bg-[#EFEBE0] hover:shadow-sm transition-all disabled:opacity-50 focus:ring-2 focus:ring-[#4E342E]/30 focus:outline-none cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add Object
               </button>
@@ -603,38 +603,38 @@ export default function App() {
 
           {/* Configuration */}
           {showAdvanced && (
-            <div className="bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-xl">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
-                <Settings className="w-5 h-5 text-white/70" />
+            <div className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-[#D7CCC8] shadow-xl">
+              <h2 className="text-xl font-display mb-6 flex items-center gap-2 text-[#4E342E]">
+                <Settings className="w-5 h-5 text-[#8D6E63]" />
                 Edit settings
               </h2>
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-white/50 mb-2">Aspect Ratio</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#8D6E63] mb-2">Aspect Ratio</label>
                   <div className="relative">
                     <select 
                       value={selectedAspectRatio}
                       onChange={(e) => setSelectedAspectRatio(e.target.value)}
-                      className="w-full appearance-none bg-black/40 border border-white/20 rounded-xl py-3 px-4 font-medium text-white focus:outline-none cursor-pointer focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all"
+                      className="w-full appearance-none bg-white border border-[#D7CCC8] rounded-xl py-3 px-4 font-sans font-medium text-[#4E342E] focus:outline-none cursor-pointer focus:ring-2 focus:ring-[#FF8F00]/50 focus:border-transparent transition-all"
                     >
-                      {ASPECT_RATIOS.map(r => <option key={r} value={r} className="bg-[#12182B] text-white">{r}</option>)}
+                      {ASPECT_RATIOS.map(r => <option key={r} value={r} className="bg-white text-[#4E342E]">{r}</option>)}
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-white/50" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[#8D6E63]" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-white/50 mb-2">Resolution</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#8D6E63] mb-2">Resolution</label>
                   <div className="relative">
                     <select 
                       value={selectedResolution}
                       onChange={(e) => setSelectedResolution(e.target.value)}
-                      className="w-full appearance-none bg-black/40 border border-white/20 rounded-xl py-3 px-4 font-medium text-white focus:outline-none cursor-pointer focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all"
+                      className="w-full appearance-none bg-white border border-[#D7CCC8] rounded-xl py-3 px-4 font-sans font-medium text-[#4E342E] focus:outline-none cursor-pointer focus:ring-2 focus:ring-[#FF8F00]/50 focus:border-transparent transition-all"
                     >
-                      {RESOLUTIONS.map(r => <option key={r} value={r} className="bg-[#12182B] text-white">{r}</option>)}
+                      {RESOLUTIONS.map(r => <option key={r} value={r} className="bg-white text-[#4E342E]">{r}</option>)}
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-white/50" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[#8D6E63]" />
                   </div>
                 </div>
               </div>
@@ -643,7 +643,7 @@ export default function App() {
 
           <button 
             onClick={handleRestart}
-            className="w-full py-4 px-6 rounded-2xl border border-white/20 font-bold uppercase tracking-wider hover:bg-white hover:text-black transition-all flex items-center justify-center gap-2 bg-white/5 backdrop-blur-sm shadow-[0_0_20px_rgba(255,255,255,0.05)] focus:ring-2 focus:ring-white/50 focus:outline-none cursor-pointer text-white"
+            className="w-full py-4 px-6 rounded-2xl border border-[#D7CCC8] font-display text-xl tracking-wider hover:bg-[#F5F5DC] hover:text-[#4E342E] transition-all flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md focus:ring-2 focus:ring-[#4E342E]/30 focus:outline-none cursor-pointer text-[#6D4C41]"
           >
             <RefreshCw className="w-5 h-5" />
             Reset Adventure
@@ -652,16 +652,16 @@ export default function App() {
 
         {/* Right Column: Prompt & Results */}
         <div className="lg:col-span-8 space-y-8">
-          <div className="bg-white/5 backdrop-blur-xl p-6 sm:p-10 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          <div className="bg-white/80 backdrop-blur-xl p-6 sm:p-10 rounded-3xl border border-[#D7CCC8] shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#FF8F00] to-transparent opacity-30"></div>
             <div className="flex justify-between items-center mb-8 relative z-10">
-              <h2 className="text-2xl font-serif text-white flex items-center gap-3">
-                <MapPin className="w-6 h-6 text-orange-400" />
+              <h2 className="text-2xl font-display text-[#4E342E] flex items-center gap-3">
+                <MapPin className="w-6 h-6 text-[#FF8F00]" />
                 2. Plan their Adventure
               </h2>
               <button 
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors border-b border-white/20 hover:border-white focus:ring-2 focus:ring-white/50 focus:outline-none focus:border-transparent rounded px-1 cursor-pointer pb-1"
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#8D6E63] hover:text-[#4E342E] transition-colors border-b border-[#D7CCC8] hover:border-[#4E342E] focus:ring-2 focus:ring-[#FF8F00]/30 focus:outline-none focus:border-transparent rounded px-1 cursor-pointer pb-1"
               >
                 <Settings className="w-4 h-4" />
                 {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
@@ -670,13 +670,13 @@ export default function App() {
             
             <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-white/50 mb-3">Destination</label>
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#8D6E63] mb-3">Destination</label>
                 <input
                   type="text"
                   value={currentDestination}
                   onChange={(e) => setCurrentDestination(e.target.value)}
                   placeholder="e.g. The Great Wall of China"
-                  className="w-full bg-transparent border-b border-white/20 py-3 text-2xl text-white focus:outline-none focus:border-white font-serif italic focus:ring-0 placeholder:text-white/20 transition-colors"
+                  className="w-full bg-transparent border-b border-[#D7CCC8] py-3 text-2xl text-[#4E342E] focus:outline-none focus:border-[#FF8F00] font-sans font-medium hover:border-[#8D6E63] focus:ring-0 placeholder:text-[#D7CCC8] transition-colors"
                   disabled={isGenerating}
                 />
               </div>
@@ -687,12 +687,12 @@ export default function App() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <label className="block text-xs font-bold uppercase tracking-widest text-white/50 mb-3">Scene Description</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#8D6E63] mb-3">Scene Description</label>
                   <textarea
                     value={currentDescription}
                     onChange={(e) => setCurrentDescription(e.target.value)}
                     placeholder="Describe the scene, lighting, and what the subjects are doing..."
-                    className="w-full bg-black/20 border border-white/10 rounded-2xl p-5 text-white min-h-[120px] focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 font-serif italic resize-none placeholder:text-white/20 transition-all"
+                    className="w-full bg-white border border-[#D7CCC8] rounded-2xl p-5 text-[#4E342E] min-h-[120px] focus:outline-none focus:border-[#FF8F00] focus:ring-2 focus:ring-[#FF8F00]/20 font-sans font-medium resize-none placeholder:text-[#D7CCC8] transition-all shadow-inner"
                     disabled={isGenerating}
                   />
                 </motion.div>
@@ -702,7 +702,7 @@ export default function App() {
                 <button 
                   type="submit"
                   disabled={!currentDestination.trim() || subjects.length === 0 || isGenerating}
-                  className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 sm:px-12 py-4 rounded-2xl font-bold uppercase tracking-widest disabled:opacity-50 disabled:grayscale hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 focus:ring-4 focus:ring-orange-500/30 focus:outline-none cursor-pointer"
+                  className="w-full sm:w-auto bg-gradient-to-r from-[#FF8F00] to-[#FF5722] text-white px-6 sm:px-12 py-4 rounded-2xl font-display text-xl tracking-widest disabled:opacity-50 disabled:grayscale hover:shadow-[0_0_30px_rgba(255,143,0,0.3)] transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 focus:ring-4 focus:ring-[#FF8F00]/30 focus:outline-none cursor-pointer"
                 >
                   {isGenerating ? (
                     <>
@@ -719,8 +719,8 @@ export default function App() {
               </div>
             </form>
 
-            <div className="mt-8 pt-8 border-t border-white/10 relative z-10">
-              <p className="text-sm font-bold uppercase tracking-wider text-white/50 mb-4">Inspiration:</p>
+            <div className="mt-8 pt-8 border-t border-[#D7CCC8] relative z-10">
+              <p className="text-sm font-bold uppercase tracking-wider text-[#8D6E63] mb-4">Inspiration:</p>
               <div className="flex flex-wrap gap-2">
                 {SUGGESTIONS.map((suggestion, idx) => {
                   const petName = subjects.find(s => s.type === 'character')?.name || "My pet";
@@ -729,7 +729,7 @@ export default function App() {
                     <button
                       key={idx}
                       onClick={() => setCurrentDestination(displaySuggestion)}
-                      className="text-left text-xs py-2 px-4 rounded-full border border-white/20 hover:border-white hover:bg-white/10 text-white/70 hover:text-white transition-all font-serif italic focus:ring-2 focus:ring-white/50 focus:outline-none cursor-pointer"
+                      className="text-left text-xs py-2 px-4 rounded-full border border-[#D7CCC8] bg-[#F5F5DC] hover:border-[#FF8F00] hover:bg-white text-[#6D4C41] hover:text-[#4E342E] transition-all font-sans font-medium focus:ring-2 focus:ring-[#FF8F00]/50 focus:outline-none cursor-pointer"
                     >
                       "{displaySuggestion}"
                     </button>
@@ -742,11 +742,11 @@ export default function App() {
           {destinations.length > 0 && (
             <div className="pt-12">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
-                <h2 className="text-3xl sm:text-4xl font-bold font-serif text-white">Travel Album</h2>
+                <h2 className="text-3xl sm:text-4xl font-display text-[#4E342E]">Travel Album</h2>
                 {destinations.some(d => d.imageUrl) && (
                   <button 
                     onClick={handleDownloadAlbum}
-                    className="flex items-center gap-2 font-bold uppercase tracking-wider text-white/70 hover:text-white border-b border-white/20 hover:border-white pb-1 transition-all cursor-pointer"
+                    className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#8D6E63] hover:text-[#4E342E] border-b border-[#D7CCC8] hover:border-[#4E342E] pb-1 transition-all cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     Download All
@@ -757,42 +757,53 @@ export default function App() {
               <div className="grid md:grid-cols-2 gap-8">
                 {destinations.map((dest) => (
                   <div key={dest.id} className="rainbow-frame cursor-default group">
-                    <div className="rainbow-frame-content p-4 min-w-0 overflow-hidden flex flex-col h-full bg-[#12182B]">
+                    <div className="rainbow-frame-content p-4 min-w-0 overflow-hidden flex flex-col h-full bg-[#FDFBF7]">
                       <div 
-                        className="bg-black/40 rounded-xl border border-white/10 overflow-hidden relative flex items-center justify-center mb-5 w-full shadow-inner"
+                        className="bg-[#EFEBE0] rounded-xl border border-[#D7CCC8] overflow-hidden relative flex items-center justify-center mb-5 w-full shadow-inner"
                         style={{ aspectRatio: dest.aspectRatio.replace(':', '/') }}
                       >
                         {dest.loading ? (
-                          <div className="text-center p-4 sm:p-8 flex flex-col items-center justify-center w-full h-full text-white">
-                            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin mb-4 text-orange-400 flex-shrink-0" />
-                            <p className="font-serif italic text-sm sm:text-base text-white/60 break-words w-full line-clamp-3">
+                          <div className="text-center p-4 sm:p-8 flex flex-col items-center justify-center w-full h-full text-[#4E342E]">
+                            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin mb-4 text-[#FF8F00] flex-shrink-0" />
+                            <p className="font-sans font-medium text-sm sm:text-base text-[#8D6E63] break-words w-full line-clamp-3">
                               Generating snap of {dest.prompt}
                             </p>
                           </div>
                         ) : dest.error ? (
-                          <div className="text-center text-red-400 px-6 py-8">
+                          <div className="text-center text-red-500 px-6 py-8">
                             <p className="font-bold mb-2">Adventure Failed</p>
                             <p className="text-sm opacity-80">{dest.error}</p>
                           </div>
                         ) : dest.imageUrl ? (
-                          <img 
-                            src={dest.imageUrl} 
-                            alt={dest.prompt}
-                            className="w-full h-full object-cover rounded-xl transition-transform duration-700 hover:scale-[1.03]"
-                          />
+                          <>
+                            <img 
+                              src={dest.imageUrl} 
+                              alt={dest.prompt}
+                              className="w-full h-full object-cover rounded-xl transition-transform duration-700 hover:scale-[1.03]"
+                            />
+                            <div className="absolute -bottom-2 -right-4 w-28 h-28 opacity-80 mix-blend-multiply pointer-events-none transform -rotate-12 group-hover:-rotate-6 transition-transform duration-500 z-20">
+                              <svg viewBox="0 0 100 100" className="w-full h-full text-[#4E342E] fill-current">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="6 3" />
+                                <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" strokeWidth="1" />
+                                <path d="M50 25 L55 35 L68 35 L58 43 L62 55 L50 48 L38 55 L42 43 L32 35 L45 35 Z" fill="currentColor" className="opacity-80" />
+                                <text x="50" y="70" textAnchor="middle" fontSize="11" fontWeight="900" fontFamily="sans-serif" fill="currentColor" style={{ textTransform: 'uppercase', letterSpacing: '2px' }}>PASSPORT</text>
+                                <text x="50" y="80" textAnchor="middle" fontSize="6" fontWeight="bold" fontFamily="monospace" fill="currentColor">{new Date(parseInt(dest.id)).toLocaleDateString()}</text>
+                              </svg>
+                            </div>
+                          </>
                         ) : null}
                       </div>
                       <div className="px-2 min-w-0 flex-1">
-                        <h3 className="font-bold text-lg uppercase tracking-wider text-white/90 break-words">{dest.prompt}</h3>
+                        <h3 className="font-display text-xl tracking-wider text-[#4E342E] break-words">{dest.prompt}</h3>
                         {dest.description && (
-                          <p className="font-serif italic text-sm text-white/50 line-clamp-2 mt-2 break-words">
+                          <p className="font-sans font-medium text-sm text-[#8D6E63] line-clamp-2 mt-2 break-words">
                             "{dest.description}"
                           </p>
                         )}
                       </div>
-                      <div className="mt-5 pt-4 border-t border-white/10 flex justify-between items-center px-2">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500">Gemini 3.1 Flash Image</span>
-                        <span className="text-[10px] font-mono text-white/30">{new Date(parseInt(dest.id)).toLocaleString()}</span>
+                      <div className="mt-5 pt-4 border-t border-[#D7CCC8] flex justify-between items-center px-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF8F00]">Gemini 3.1 Flash Image</span>
+                        <span className="text-[10px] font-mono text-[#8D6E63]">{new Date(parseInt(dest.id)).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
