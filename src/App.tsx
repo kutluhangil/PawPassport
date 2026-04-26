@@ -25,15 +25,74 @@ import {
   Wand2,
   Music,
   VolumeX,
-  Heart
+  Heart,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Joyride, STATUS, Step } from 'react-joyride';
 import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import { jsPDF } from 'jspdf';
 import { auth, db } from './lib/firebase';
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User, updateProfile } from 'firebase/auth';
 import { collection, doc, setDoc, query, onSnapshot, deleteDoc } from 'firebase/firestore';
+
+const saveAs = (blob: Blob, filename: string) => {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(link.href), 100);
+};
+
+// Firestore Error Handler
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -59,6 +118,8 @@ type Adventure = {
   error?: string;
   aspectRatio: string;
   isFavorite?: boolean;
+  subjectNames?: string[];
+  subjectTypes?: string[];
 };
 
 type Toast = {
@@ -147,6 +208,25 @@ export default function App() {
     }
     return [];
   });
+  
+  const [pastDestinations, setPastDestinations] = useState<Adventure[][]>([]);
+  const [futureDestinations, setFutureDestinations] = useState<Adventure[][]>([]);
+
+  const undo = () => {
+    if (pastDestinations.length === 0) return;
+    const previous = pastDestinations[pastDestinations.length - 1];
+    setPastDestinations(p => p.slice(0, p.length - 1));
+    setFutureDestinations(f => [destinations, ...f]);
+    setDestinations(previous);
+  };
+
+  const redo = () => {
+    if (futureDestinations.length === 0) return;
+    const next = futureDestinations[0];
+    setFutureDestinations(f => f.slice(1));
+    setPastDestinations(p => [...p, destinations]);
+    setDestinations(next);
+  };
   const [currentDestination, setCurrentDestination] = useState(() => localStorage.getItem('pawpassport-draft-destination') || '');
   const [currentDescription, setCurrentDescription] = useState(() => localStorage.getItem('pawpassport-draft-description') || '');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -168,10 +248,14 @@ export default function App() {
     return onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
-        await setDoc(doc(db, 'users', user.uid), {
-          email: user.email,
-          displayName: user.displayName
-        }, { merge: true });
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            email: user.email || '',
+            ...(user.displayName ? { displayName: user.displayName } : {})
+          }, { merge: true });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+        }
       }
     });
   }, []);
@@ -188,16 +272,46 @@ export default function App() {
 
   const handleLogout = () => signOut(auth);
 
+  const handleUpdateProfile = async (displayName: string, photoURL: string) => {
+    if (!currentUser) return;
+    try {
+      await updateProfile(currentUser, { displayName, photoURL });
+      // update state manually to trigger re-render
+      setCurrentUser({ ...currentUser, displayName, photoURL } as User);
+      await setDoc(doc(db, 'users', currentUser.uid), {
+        displayName,
+      }, { merge: true });
+      addToast('Profile updated!', 'success');
+      setShowProfileDialog(false);
+    } catch (e: any) {
+      addToast(e.message, 'error');
+    }
+  };
+
   const [runTour, setRunTour] = useState(() => {
     return localStorage.getItem('pawpassport-tour-seen') !== 'true';
   });
 
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week'>('all');
   const [locationFilter, setLocationFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'character' | 'object'>('all');
+  const [subjectNameFilter, setSubjectNameFilter] = useState('');
+  const [historyViewMode, setHistoryViewMode] = useState<'all' | 'favorites'>('all');
+  const [historySortOrder, setHistorySortOrder] = useState<'newest' | 'oldest'>('newest');
   const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [generateProgress, setGenerateProgress] = useState(0);
 
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const [volume, setVolume] = useState(0.5);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   // Drafts
   useEffect(() => {
@@ -245,47 +359,130 @@ export default function App() {
     }
   ];
 
-  const handleExportZip = async () => {
-    if (destinations.length === 0) return;
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportName, setExportName] = useState('pawpassport_album');
+  const [exportFormat, setExportFormat] = useState<'zip' | 'pdf'>('zip');
+  const [exportIncludeDescriptions, setExportIncludeDescriptions] = useState(true);
+  const [exportSelectedIds, setExportSelectedIds] = useState<string[]>([]);
+  
+  const handleOpenExport = () => {
+    setExportSelectedIds(destinations.filter(d => d.imageUrl && !d.loading).map(d => d.id));
+    setShowExportDialog(true);
+  };
+
+  const handleExportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (exportSelectedIds.length === 0) return;
+    
     setIsExporting(true);
+    setExportProgress(0);
+    const loadedDests = destinations.filter(d => exportSelectedIds.includes(d.id) && d.imageUrl && !d.loading);
+
     try {
-      const zip = new JSZip();
-      
-      const loadedDests = destinations.filter(d => d.imageUrl && !d.loading);
-      for (let i = 0; i < loadedDests.length; i++) {
-        const dest = loadedDests[i];
-        if (!dest.imageUrl) continue;
-        const response = await fetch(dest.imageUrl);
-        const blob = await response.blob();
+      if (exportFormat === 'zip') {
+        const zip = new JSZip();
+        for (let i = 0; i < loadedDests.length; i++) {
+          setExportProgress(Math.round((i / loadedDests.length) * 100));
+          const dest = loadedDests[i];
+          if (!dest.imageUrl) continue;
+          
+          let contentStr = '';
+          if (exportIncludeDescriptions) {
+             contentStr = `Destination: ${dest.prompt}\nDescription: ${dest.description || ''}`;
+          }
+
+          const response = await fetch(dest.imageUrl);
+          const blob = await response.blob();
+          
+          let filename = dest.prompt.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          if (filename.length > 50) filename = filename.substring(0, 50);
+          
+          zip.file(`${filename}_${dest.id}.jpg`, blob);
+          if (exportIncludeDescriptions && contentStr) {
+             zip.file(`${filename}_${dest.id}.txt`, contentStr);
+          }
+        }
         
-        let filename = dest.prompt.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        if (filename.length > 50) filename = filename.substring(0, 50);
-        
-        zip.file(`${filename}_${dest.id}.jpg`, blob);
+        const content = await zip.generateAsync({ type: 'blob' }, (metadata) => {
+           setExportProgress(Math.round(metadata.percent));
+        });
+        saveAs(content, `${exportName || 'album'}.zip`);
+        addToast('Travel album ZIP downloaded!', 'success');
+      } else {
+        const pdf = new jsPDF();
+        let isFirstPage = true;
+
+        for (let i = 0; i < loadedDests.length; i++) {
+          setExportProgress(Math.round(((i) / loadedDests.length) * 100));
+          const dest = loadedDests[i];
+          if (!dest.imageUrl) continue;
+          
+          if (!isFirstPage) {
+            pdf.addPage();
+          }
+          isFirstPage = false;
+
+          const response = await fetch(dest.imageUrl);
+          const blob = await response.blob();
+          
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+
+          // Add Image
+          pdf.addImage(base64, 'JPEG', 20, 20, 170, 170); // A placeholder size
+          
+          // Add text
+          pdf.setFontSize(16);
+          pdf.text("Destination: " + dest.prompt, 20, 200, { maxWidth: 170 });
+          
+          if (exportIncludeDescriptions && dest.description) {
+            pdf.setFontSize(12);
+            pdf.text("Description: " + dest.description, 20, 210, { maxWidth: 170 });
+          }
+        }
+        setExportProgress(100);
+
+        pdf.save(`${exportName || 'album'}.pdf`);
+        addToast('Travel album PDF downloaded!', 'success');
       }
-      
-      const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, 'pawpassport_album.zip');
-      addToast('Travel album downloaded!', 'success');
     } catch (error) {
       console.error(error);
       addToast('Failed to export travel album.', 'error');
     } finally {
       setIsExporting(false);
+      setShowExportDialog(false);
+      setTimeout(() => setExportProgress(0), 1000);
     }
   };
 
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [sharingDestination, setSharingDestination] = useState<Adventure | null>(null);
 
   const filteredDestinations = destinations.filter(d => {
     if (locationFilter && !d.prompt.toLowerCase().includes(locationFilter.toLowerCase())) return false;
     if (dateFilter === 'today') {
-      return new Date(parseInt(d.id)).toDateString() === new Date().toDateString();
+      if (new Date(parseInt(d.id)).toDateString() !== new Date().toDateString()) return false;
     }
     if (dateFilter === 'week') {
-      return new Date(parseInt(d.id)) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      if (new Date(parseInt(d.id)) <= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) return false;
+    }
+    if (typeFilter !== 'all') {
+      if (!d.subjectTypes || !d.subjectTypes.includes(typeFilter)) return false;
+    }
+    if (subjectNameFilter) {
+      const namesJoined = (d.subjectNames || []).join(' ').toLowerCase();
+      if (!namesJoined.includes(subjectNameFilter.toLowerCase())) return false;
+    }
+    if (historyViewMode === 'favorites') {
+      if (!d.isFavorite) return false;
     }
     return true;
+  }).sort((a, b) => {
+    if (historySortOrder === 'newest') return parseInt(b.id) - parseInt(a.id);
+    return parseInt(a.id) - parseInt(b.id);
   });
 
   const toggleMusic = () => {
@@ -357,37 +554,62 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadType, setUploadType] = useState<'character' | 'object'>('character');
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [isDragging, setIsDragging] = useState(false);
+
+  const processFiles = (files: File[]) => {
+    if (!files.length) return;
 
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      addToast("Please upload a valid image file (.png, .jpg, .jpeg, or .webp)", 'error');
-      e.target.value = '';
-      return;
-    }
+    const newSubjects: Subject[] = [];
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      const base64Data = base64String.split(',')[1];
-      
-      const newSubject: Subject = {
-        id: Date.now().toString(),
-        name: uploadType === 'character' ? `Pet ${subjects.filter(s => s.type === 'character').length + 1}` : `Object ${subjects.filter(s => s.type === 'object').length + 1}`,
-        type: uploadType,
-        data: base64Data,
-        mimeType: file.type,
-        url: base64String
+    let completed = 0;
+
+    files.forEach((file, index) => {
+      if (!validTypes.includes(file.type)) {
+        addToast(`Skipped ${file.name} - invalid type`, 'error');
+        completed++;
+        if (completed === files.length && newSubjects.length > 0) {
+          setSubjects(prev => [...prev, ...newSubjects]);
+          setHasStarted(true);
+        }
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        const base64Data = base64String.split(',')[1];
+        
+        const newSubject: Subject = {
+          id: Date.now().toString() + index,
+          name: uploadType === 'character' ? `Pet ${subjects.filter(s => s.type === 'character').length + newSubjects.filter(s=>s.type === 'character').length + 1}` : `Object ${subjects.filter(s => s.type === 'object').length + newSubjects.filter(s=>s.type === 'object').length + 1}`,
+          type: uploadType,
+          data: base64Data,
+          mimeType: file.type,
+          url: base64String
+        };
+
+        newSubjects.push(newSubject);
+        completed++;
+        
+        if (completed === files.length) {
+          setSubjects(prev => [...prev, ...newSubjects]);
+          setHasStarted(true);
+        }
       };
+      reader.readAsDataURL(file);
+    });
+  };
 
-      setSubjects(prev => [...prev, newSubject]);
-      setHasStarted(true);
-    };
-    reader.readAsDataURL(file);
-    // Reset input
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processFiles(Array.from(e.target.files || []));
     e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    processFiles(Array.from(e.dataTransfer.files || []));
   };
 
   const removeSubject = (id: string) => {
@@ -398,16 +620,24 @@ export default function App() {
     if (!currentUser) return addToast("Please sign in to save subjects!", "error");
     try {
       if (subject.isSaved) {
-        await deleteDoc(doc(db, 'users', currentUser.uid, 'subjects', subject.id));
+        try {
+          await deleteDoc(doc(db, 'users', currentUser.uid, 'subjects', subject.id));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `users/${currentUser.uid}/subjects/${subject.id}`);
+        }
         setSubjects(prev => prev.map(s => s.id === subject.id ? { ...s, isSaved: false } : s));
       } else {
-        await setDoc(doc(db, 'users', currentUser.uid, 'subjects', subject.id), {
-          userId: currentUser.uid,
-          name: subject.name,
-          type: subject.type,
-          objectCategory: subject.objectCategory || '',
-          url: subject.url
-        });
+        try {
+          await setDoc(doc(db, 'users', currentUser.uid, 'subjects', subject.id), {
+            userId: currentUser.uid,
+            name: subject.name,
+            type: subject.type,
+            objectCategory: subject.objectCategory || '',
+            url: subject.url
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `users/${currentUser.uid}/subjects/${subject.id}`);
+        }
         setSubjects(prev => prev.map(s => s.id === subject.id ? { ...s, isSaved: true } : s));
         addToast("Subject saved to profile!", "success");
       }
@@ -420,17 +650,27 @@ export default function App() {
     if (!currentUser) return addToast("Please sign in to save favorites!", "error");
     try {
       if (dest.isFavorite) {
-        await deleteDoc(doc(db, 'users', currentUser.uid, 'destinations', dest.id));
+        try {
+          await deleteDoc(doc(db, 'users', currentUser.uid, 'destinations', dest.id));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `users/${currentUser.uid}/destinations/${dest.id}`);
+        }
         setDestinations(prev => prev.map(d => d.id === dest.id ? { ...d, isFavorite: false } : d));
       } else {
-        await setDoc(doc(db, 'users', currentUser.uid, 'destinations', dest.id), {
-          userId: currentUser.uid,
-          destination: dest.prompt,
-          description: dest.description || '',
-          imageUrl: dest.imageUrl,
-          createdAt: parseInt(dest.id),
-          isFavorite: true
-        });
+        try {
+          await setDoc(doc(db, 'users', currentUser.uid, 'destinations', dest.id), {
+            userId: currentUser.uid,
+            destination: dest.prompt,
+            description: dest.description || '',
+            imageUrl: dest.imageUrl,
+            createdAt: parseInt(dest.id),
+            isFavorite: true,
+            subjectNames: dest.subjectNames || [],
+            subjectTypes: dest.subjectTypes || []
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `users/${currentUser.uid}/destinations/${dest.id}`);
+        }
         setDestinations(prev => prev.map(d => d.id === dest.id ? { ...d, isFavorite: true } : d));
         addToast("Destination saved to profile!", "success");
       }
@@ -454,6 +694,8 @@ export default function App() {
           });
         }
       });
+    }, error => {
+      handleFirestoreError(error, OperationType.LIST, `users/${currentUser.uid}/subjects`);
     });
 
     // Sync destinations
@@ -463,10 +705,12 @@ export default function App() {
           const data = change.doc.data();
           setDestinations(prev => {
             if (prev.find(d => d.id === change.doc.id)) return prev.map(d => d.id === change.doc.id ? { ...d, isFavorite: true } : d);
-            return [...prev, { id: change.doc.id, prompt: data.destination, description: data.description, imageUrl: data.imageUrl, loading: false, aspectRatio: '9:16', isFavorite: true }];
+            return [...prev, { id: change.doc.id, prompt: data.destination, description: data.description, imageUrl: data.imageUrl, loading: false, aspectRatio: '9:16', isFavorite: true, subjectNames: data.subjectNames, subjectTypes: data.subjectTypes }];
           });
         }
       });
+    }, error => {
+      handleFirestoreError(error, OperationType.LIST, `users/${currentUser.uid}/destinations`);
     });
 
     return () => {
@@ -508,10 +752,22 @@ export default function App() {
       description,
       loading: true,
       aspectRatio: selectedAspectRatio,
+      subjectNames: subjects.map(s => s.name),
+      subjectTypes: subjects.map(s => s.type)
     };
 
+    setPastDestinations(p => [...p, destinations]);
+    setFutureDestinations([]);
     setDestinations(prev => [newAdventure, ...prev]);
     setIsGenerating(true);
+    setGenerateProgress(0);
+
+    let progressInterval = setInterval(() => {
+      setGenerateProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.floor(Math.random() * 5) + 2;
+      });
+    }, 500);
 
     try {
       // Final key check before spending tokens
@@ -607,7 +863,10 @@ export default function App() {
         adv.id === newAdventure.id ? { ...adv, loading: false, error: errorMessage } : adv
       ));
     } finally {
+      clearInterval(progressInterval);
+      setGenerateProgress(100);
       setIsGenerating(false);
+      setTimeout(() => setGenerateProgress(0), 1000);
     }
   };
 
@@ -750,11 +1009,16 @@ export default function App() {
           transition={{ delay: 0.6 }}
           className="max-w-md mx-auto"
         >
-          <div className="glass-panel p-10 rounded-3xl text-center shadow-2xl relative overflow-hidden">
+          <div 
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={`glass-panel p-10 rounded-3xl text-center shadow-2xl relative overflow-hidden ring-2 transition-all duration-300 ${isDragging ? 'ring-[#D4AF37] bg-white/10 scale-105' : 'ring-transparent'}`}
+          >
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/5 to-transparent"></div>
             <h2 className="text-3xl font-display mb-4 text-[#D4AF37] relative z-10">Start Your Adventure</h2>
             <p className="font-sans font-medium text-white/60 mb-8 relative z-10">
-              Upload a clear photo of your pet to begin their global journey.
+              {isDragging ? 'Drop your photos here!' : 'Drag & drop or upload a clear photo of your pet to begin their global journey.'}
             </p>
             
             <button 
@@ -785,6 +1049,7 @@ export default function App() {
               onChange={handleImageUpload}
               accept=".png,.jpg,.jpeg,.webp"
               className="hidden"
+              multiple
             />
           </div>
         </motion.div>
@@ -805,6 +1070,12 @@ export default function App() {
             <div className="hidden sm:block min-w-0">
               <div className="text-sm font-bold text-white truncate max-w-[120px]">{currentUser.displayName || currentUser.email?.split('@')[0]}</div>
             </div>
+            <button
+              onClick={() => setShowProfileDialog(true)}
+              className="ml-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors"
+            >
+              Edit Profile
+            </button>
             <button
               onClick={handleLogout}
               className="ml-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-red-400 transition-colors"
@@ -840,13 +1111,27 @@ export default function App() {
           }
         } as any}
       />
-      <button 
-        onClick={toggleMusic}
-        className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-[#D4AF37] shadow-xl transition hover:-translate-y-1"
-        title="Toggle Music"
-      >
-        {isMusicPlaying ? <Music className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-      </button>
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-black/50 border border-white/20 p-2 rounded-full backdrop-blur-md shadow-xl hover:bg-black/70 transition-colors">
+        <input 
+          type="range" 
+          min="0" 
+          max="1" 
+          step="0.05" 
+          value={volume}
+          onChange={(e) => setVolume(parseFloat(e.target.value))}
+          className="w-16 accent-[#D4AF37] ml-2"
+          aria-label="Volume Control"
+        />
+        <button 
+          onClick={toggleMusic}
+          className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-[#D4AF37] transition"
+          title="Toggle Music"
+          aria-label={isMusicPlaying ? 'Pause Background Music' : 'Play Background Music'}
+          aria-pressed={isMusicPlaying}
+        >
+          {isMusicPlaying ? <Music className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+        </button>
+      </div>
 
     <div className="max-w-6xl mx-auto pl-4 pr-6 sm:px-8 py-12 relative z-10">
       {/* Toast Container */}
@@ -888,6 +1173,80 @@ export default function App() {
           Send your furry friends on a global adventure with Gemini 3.1 Flash Image
         </p>
       </header>
+
+      <AnimatePresence>
+        {showExportDialog && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-[#121217] border border-white/10 rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 relative max-h-[90vh] flex flex-col"
+            >
+              <button 
+                onClick={() => setShowExportDialog(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-white/50 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <h2 className="text-3xl font-display text-white mb-6">Export Album</h2>
+              
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Export Name</label>
+                  <input
+                    type="text"
+                    value={exportName}
+                    onChange={(e) => setExportName(e.target.value)}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                  />
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Format</label>
+                    <div className="flex gap-2">
+                       <button onClick={() => setExportFormat('zip')} className={`flex-1 py-2 rounded-lg font-bold border transition-colors ${exportFormat === 'zip' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>ZIP Archive</button>
+                       <button onClick={() => setExportFormat('pdf')} className={`flex-1 py-2 rounded-lg font-bold border transition-colors ${exportFormat === 'pdf' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>PDF Document</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" id="includeDescriptions" checked={exportIncludeDescriptions} onChange={e => setExportIncludeDescriptions(e.target.checked)} className="w-5 h-5 accent-[#D4AF37] rounded" />
+                  <label htmlFor="includeDescriptions" className="text-white/80 font-sans font-medium">Include descriptions</label>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">
+                    Select Images ({exportSelectedIds.length} / {destinations.filter(d => d.imageUrl && !d.loading).length})
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                     {destinations.filter(d => d.imageUrl && !d.loading).map(dest => (
+                       <div key={dest.id} onClick={() => setExportSelectedIds(prev => prev.includes(dest.id) ? prev.filter(id => id !== dest.id) : [...prev, dest.id])} className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${exportSelectedIds.includes(dest.id) ? 'border-[#D4AF37]' : 'border-transparent opacity-50 hover:opacity-80'}`}>
+                         <img src={dest.imageUrl} alt={dest.prompt} className="w-full h-full object-cover" />
+                         {exportSelectedIds.includes(dest.id) && <div className="absolute top-2 right-2 bg-[#D4AF37] text-black p-1 rounded-full"><Check className="w-3 h-3" /></div>}
+                       </div>
+                     ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 pt-4 border-t border-white/10">
+                <button
+                  onClick={handleExportSubmit}
+                  disabled={isExporting || exportSelectedIds.length === 0}
+                  className="w-full flex items-center justify-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-black py-4 rounded-xl font-display font-medium text-xl tracking-wider transition-all disabled:opacity-50 focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none"
+                >
+                  {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
+                  {isExporting ? `Exporting (${exportProgress}%)` : `Export ${exportSelectedIds.length} Items`}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showKeyDialog && (
@@ -942,6 +1301,60 @@ export default function App() {
                   Select API Key
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showProfileDialog && currentUser && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-[#121217] border border-white/10 p-6 md:p-8 rounded-3xl max-w-md w-full shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setShowProfileDialog(false)}
+                className="absolute top-4 right-4 p-2 text-white/50 hover:text-white rounded-full transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <h2 className="text-2xl font-display mb-6 text-white text-center">Edit Profile</h2>
+              
+              <form onSubmit={e => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleUpdateProfile(formData.get('displayName') as string, formData.get('photoURL') as string);
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Display Name</label>
+                  <input
+                    type="text"
+                    name="displayName"
+                    defaultValue={currentUser.displayName || ''}
+                    placeholder="Enter display name"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Profile Image URL</label>
+                  <input
+                    type="url"
+                    name="photoURL"
+                    defaultValue={currentUser.photoURL || ''}
+                    placeholder="https://example.com/avatar.jpg"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  className="w-full mt-4 flex items-center justify-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-black py-3 px-4 rounded-xl font-bold transition-all cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none"
+                >
+                  Save Profile
+                </button>
+              </form>
             </motion.div>
           </div>
         )}
@@ -1018,9 +1431,14 @@ export default function App() {
         {/* Left Column: Subjects & Config */}
         <div className="lg:col-span-4 space-y-8">
           {/* Subject Manager */}
-          <div className="tour-step-upload glass-panel p-6 rounded-3xl shadow-xl">
+          <div 
+            className={`tour-step-upload glass-panel p-6 rounded-3xl shadow-xl transition-all duration-300 ring-2 ${isDragging ? 'ring-[#D4AF37] bg-white/10 scale-105' : 'ring-transparent'}`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+          >
             <h2 className="text-2xl font-display mb-4 flex items-center justify-between text-white">
-              <span>1. Upload subjects</span>
+              <span>1. Upload subjects {isDragging && <span className="text-sm ml-2 text-[#D4AF37]">Drop images here</span>}</span>
             </h2>
             <h3 className="mb-4">
               <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37]">{characterCount}/10 Pets • {objectCount}/20 Objects</span>
@@ -1123,6 +1541,7 @@ export default function App() {
               onChange={handleImageUpload}
               accept=".png,.jpg,.jpeg,.webp"
               className="hidden"
+              multiple
             />
           </div>
 
@@ -1275,7 +1694,25 @@ export default function App() {
                 </motion.div>
               )}
 
-              <div className="flex justify-end items-center pt-2">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={undo}
+                    disabled={pastDestinations.length === 0 || isGenerating}
+                    className="bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={redo}
+                    disabled={futureDestinations.length === 0 || isGenerating}
+                    className="bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  >
+                    Redo
+                  </button>
+                </div>
                 <button 
                   type="submit"
                   disabled={!currentDestination.trim() || subjects.length === 0 || isGenerating}
@@ -1360,26 +1797,43 @@ export default function App() {
             <div className="pt-12">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
                 <h2 className="text-3xl sm:text-4xl font-display text-white">Travel Album</h2>
-                {destinations.some(d => d.imageUrl) && (
-                  <button 
-                    onClick={handleExportZip}
-                    disabled={isExporting}
-                    className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#D4AF37] hover:text-white border-b border-transparent hover:border-white pb-1 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    {isExporting ? 'Exporting ZIP...' : 'Download All as ZIP'}
-                  </button>
-                )}
+                <div className="flex items-center gap-4">
+                  {destinations.some(d => d.imageUrl) && (
+                    <button 
+                      onClick={handleOpenExport}
+                      className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#D4AF37] hover:text-white border-b border-transparent hover:border-white pb-1 transition-all cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Album
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6">
                 <input
                   type="text"
                   placeholder="Filter by location..."
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
-                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[200px]"
+                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
                 />
+                <input
+                  type="text"
+                  placeholder="Subject name..."
+                  value={subjectNameFilter}
+                  onChange={(e) => setSubjectNameFilter(e.target.value)}
+                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
+                />
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as any)}
+                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                >
+                  <option value="all" className="bg-[#121217]">All Subjects</option>
+                  <option value="character" className="bg-[#121217]">Pets</option>
+                  <option value="object" className="bg-[#121217]">Objects</option>
+                </select>
                 <select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value as any)}
@@ -1388,6 +1842,22 @@ export default function App() {
                   <option value="all" className="bg-[#121217]">All Time</option>
                   <option value="today" className="bg-[#121217]">Today</option>
                   <option value="week" className="bg-[#121217]">This Week</option>
+                </select>
+                <select
+                  value={historyViewMode}
+                  onChange={(e) => setHistoryViewMode(e.target.value as any)}
+                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                >
+                  <option value="all" className="bg-[#121217]">Full History</option>
+                  <option value="favorites" className="bg-[#121217]">Favorites Only</option>
+                </select>
+                <select
+                  value={historySortOrder}
+                  onChange={(e) => setHistorySortOrder(e.target.value as any)}
+                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                >
+                  <option value="newest" className="bg-[#121217]">Newest First</option>
+                  <option value="oldest" className="bg-[#121217]">Oldest First</option>
                 </select>
               </div>
 
@@ -1402,9 +1872,13 @@ export default function App() {
                         {dest.loading ? (
                           <div className="text-center p-4 sm:p-8 flex flex-col items-center justify-center w-full h-full text-white">
                             <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin mb-4 text-[#D4AF37] flex-shrink-0" />
-                            <p className="font-sans font-medium text-sm sm:text-base text-white/50 break-words w-full line-clamp-3">
+                            <p className="font-sans font-medium text-sm sm:text-base text-white/50 break-words w-full line-clamp-3 mb-2">
                               Generating snap of {dest.prompt}
                             </p>
+                            <div className="w-full bg-white/10 rounded-full h-2 mt-2 overflow-hidden shadow-inner flex items-center justify-start border border-white/5">
+                              <div className="bg-[#D4AF37] h-2 transition-all duration-300" style={{ width: `${generateProgress}%` }}></div>
+                            </div>
+                            <span className="text-xs text-[#D4AF37] mt-1 font-mono">{generateProgress}%</span>
                           </div>
                         ) : dest.error ? (
                           <div className="text-center text-red-400 px-6 py-8">
