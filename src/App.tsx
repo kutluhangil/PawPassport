@@ -26,7 +26,9 @@ import {
   Music,
   VolumeX,
   Heart,
-  Check
+  Check,
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Joyride, STATUS, Step } from 'react-joyride';
@@ -120,6 +122,8 @@ type Adventure = {
   isFavorite?: boolean;
   subjectNames?: string[];
   subjectTypes?: string[];
+  filter?: string;
+  animation?: string;
 };
 
 type Toast = {
@@ -193,7 +197,11 @@ const TEMPLATE_IMAGES: TemplateImage[] = [
   },
 ];
 
+import { dict } from './translations';
+
 export default function App() {
+  const [lang, setLang] = useState<'en' | 'tr'>('tr');
+  const t = dict[lang];
   const [subjects, setSubjects] = useState<Subject[]>(() => {
     const saved = localStorage.getItem('pawpassport-subjects');
     if (saved) {
@@ -238,6 +246,15 @@ export default function App() {
   const [hasStarted, setHasStarted] = useState(() => {
     return localStorage.getItem('pawpassport-started') === 'true';
   });
+
+  const [subjectPresets, setSubjectPresets] = useState<{name: string, subjects: Subject[]}[]>(() => {
+    const saved = localStorage.getItem('pawpassport-subject-presets');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { return []; }
+    }
+    return [];
+  });
+  const [showPresetsMenu, setShowPresetsMenu] = useState(false);
   
   const [dynamicSuggestions, setDynamicSuggestions] = useState<string[]>([]);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
@@ -851,16 +868,21 @@ export default function App() {
 
     } catch (error: any) {
       console.error("Generation error:", error);
-      const errorMessage = error.message || "Failed to generate image";
+      const errorMessage = (error?.message || error?.toString() || "Failed to generate image").toLowerCase();
       
-      if (errorMessage.includes("Requested entity was not found") || errorMessage.includes("404")) {
+      if (errorMessage.includes("requested entity was not found") || errorMessage.includes("404") || errorMessage.includes("api key") || errorMessage.includes("api_key")) {
+        addToast("API Key Issue: Please check your Gemini API key in settings or generate a new one.", 'error');
         setShowKeyDialog(true);
+      } else if (errorMessage.includes("429") || errorMessage.includes("quota") || errorMessage.includes("exhausted")) {
+        addToast("Quota exceeded: You might need to wait a moment or check your API limits.", 'error');
+      } else if (errorMessage.includes("blocked") || errorMessage.includes("safety")) {
+        addToast("Safety block: The generation was blocked by safety filters. Please try modifying your scene description.", 'error');
       } else {
-        addToast(errorMessage, 'error');
+        addToast(`Generation failed: ${error.message || "Unknown error"}. Please modify your request.`, 'error');
       }
 
       setDestinations(prev => prev.map(adv => 
-        adv.id === newAdventure.id ? { ...adv, loading: false, error: errorMessage } : adv
+        adv.id === newAdventure.id ? { ...adv, loading: false, error: "Failed to generate image. " + (error.message || "") } : adv
       ));
     } finally {
       clearInterval(progressInterval);
@@ -879,13 +901,32 @@ export default function App() {
     }
   };
 
-  const handleDownloadImage = (url: string, prefix: string = 'pet-passport') => {
+  const handleDownloadImage = (url: string, prefix: string = 'pet-passport', format: 'png' | 'jpeg' = 'png') => {
     const link = document.createElement('a');
-    link.href = url;
-    link.download = `${prefix}-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (format === 'jpeg' && url.startsWith('data:image/png')) {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+           ctx.drawImage(img, 0, 0);
+           link.href = canvas.toDataURL('image/jpeg', 0.9);
+           link.download = `${prefix}-${Date.now()}.jpg`;
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+        }
+      };
+      img.src = url;
+    } else {
+      link.href = url;
+      link.download = `${prefix}-${Date.now()}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const handleShareImage = async (url: string, title: string) => {
@@ -937,130 +978,159 @@ export default function App() {
 
   if (!hasStarted) {
     return (
-      <>
-      <audio ref={audioRef} loop src="https://upload.wikimedia.org/wikipedia/commons/e/e5/Kevin_MacLeod_-_A_Mission.ogg" />
-      <div className="max-w-6xl mx-auto pl-4 pr-6 sm:px-8 py-12 relative z-10">
-        <header className="text-center mb-20 space-y-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/5 border border-white/10 mb-2 premium-glow"
-          >
-            <Plane className="w-8 h-8 text-[#D4AF37]" />
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-6xl sm:text-7xl md:text-8xl font-display text-transparent bg-clip-text bg-gradient-to-br from-[#FAFAFA] to-white/40 drop-shadow-lg"
-          >
-            PawPassport
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-xl md:text-2xl font-sans font-medium text-white/60 max-w-2xl mx-auto"
-          >
-            Send your furry friends on a global adventure using Gemini 3.1 Flash Image.
-          </motion.p>
-        </header>
+      <div className="relative min-h-screen bg-black text-[#FAFAFA] font-sans overflow-x-hidden">
+        <audio ref={audioRef} loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/theme_01.mp3" />
+        
+        {/* Background glow effects */}
+        <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none atmosphere z-0"></div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-24 px-4 md:px-0">
-          {TEMPLATE_IMAGES.map((img, idx) => (
-            <motion.div 
-              key={img.id} 
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + (idx * 0.1) }}
-              className={`premium-frame cursor-pointer group ${
-                idx === 0 ? 'md:-rotate-2' : idx === 1 ? 'md:translate-y-8' : 'md:rotate-2'
-              }`}
-              onClick={() => {
-                setUploadType('character');
-                fileInputRef.current?.click();
-              }}
-            >
-              <div className="premium-frame-content p-4 transition-transform duration-300">
-                <div 
-                  className="rounded-xl overflow-hidden mb-5 bg-black/40 border border-white/5 shadow-inner"
-                  style={{ aspectRatio: img.aspect_ratio.replace(':', '/') }}
-                >
-                  <img 
-                    src={img.imageUrl} 
-                    alt={img.location} 
-                    className="w-full h-full object-cover rounded-xl transition-transform duration-700 ease-out group-hover:scale-105 opacity-90 group-hover:opacity-100"
-                  />
-                </div>
-                <div className="text-center">
-                  <h3 className="font-display text-xl tracking-wide text-white/90 uppercase">{img.location}</h3>
-                  <div className="font-sans font-medium text-[#D4AF37]/80 text-sm line-clamp-2 mt-2">
-                    "{img.template_description}"
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="max-w-md mx-auto"
-        >
-          <div 
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            className={`glass-panel p-10 rounded-3xl text-center shadow-2xl relative overflow-hidden ring-2 transition-all duration-300 ${isDragging ? 'ring-[#D4AF37] bg-white/10 scale-105' : 'ring-transparent'}`}
-          >
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/5 to-transparent"></div>
-            <h2 className="text-3xl font-display mb-4 text-[#D4AF37] relative z-10">Start Your Adventure</h2>
-            <p className="font-sans font-medium text-white/60 mb-8 relative z-10">
-              {isDragging ? 'Drop your photos here!' : 'Drag & drop or upload a clear photo of your pet to begin their global journey.'}
-            </p>
-            
-            <button 
-              onClick={() => {
-                setUploadType('character');
-                fileInputRef.current?.click();
-              }}
-              className="relative z-10 w-full flex items-center justify-center gap-3 py-5 px-8 rounded-2xl bg-white text-black font-display font-medium text-xl tracking-wider hover:bg-white/90 transition-all transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-white/30 focus:outline-none cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-            >
-              <Upload className="w-5 h-5" />
-              Upload Pet Photo
-            </button>
-
-            <div className="relative z-10 mt-8 text-xs leading-relaxed text-left text-white/40 space-y-3 font-sans font-medium">
-              <p>
-                By using this feature, you confirm that you have the necessary rights to any content that you upload. 
-                Do not generate content that infringes on others' intellectual property or privacy rights. 
-                Your use of this generative AI service is subject to our Prohibited Use Policy.
-              </p>
-              <p>
-                Please note that uploads from Google Workspace may be used to develop and improve Google products and services in accordance with our terms.
-              </p>
-            </div>
-
-            <input 
-              type="file" 
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              accept=".png,.jpg,.jpeg,.webp"
-              className="hidden"
-              multiple
-            />
+        <nav className="relative z-20 flex justify-between items-center py-6 px-4 md:px-8 max-w-7xl mx-auto">
+          <div className="flex items-center gap-3">
+             <Plane className="w-6 h-6 text-[#D4AF37]" />
+             <span className="font-display text-xl tracking-wider uppercase text-white/90">PawPassport</span>
           </div>
-        </motion.div>
+          <div className="flex items-center gap-4">
+             <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
+               <button 
+                 onClick={() => setLang('tr')} 
+                 className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${lang === 'tr' ? 'bg-[#D4AF37] text-black' : 'text-white/50 hover:text-white'}`}
+               >
+                 TR
+               </button>
+               <button 
+                 onClick={() => setLang('en')} 
+                 className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${lang === 'en' ? 'bg-[#D4AF37] text-black' : 'text-white/50 hover:text-white'}`}
+               >
+                 EN
+               </button>
+             </div>
+            {currentUser ? (
+                <button onClick={() => setHasStarted(true)} className="nav-pill text-[#D4AF37] border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 cursor-pointer transition">
+                  {t.enterStudio}
+                </button>
+            ) : (
+               <button onClick={handleLogin} className="nav-pill hover:bg-white/5 cursor-pointer transition text-white">{t.signIn}</button>
+            )}
+          </div>
+        </nav>
+
+        <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-20 pb-32">
+           <div className="text-center max-w-4xl mx-auto mb-32">
+             <motion.div initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8">
+               <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse"></span>
+               <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37]">{t.poweredBy}</span>
+             </motion.div>
+             
+             <motion.h1 
+                initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} transition={{delay:0.1}}
+                className="text-[12vw] md:text-8xl font-display font-light leading-[0.9] tracking-tight mb-8"
+             >
+                {t.title.split(',')[0]}<br/><span className="text-[#D4AF37] italic" style={{ fontFamily: 'Georgia, serif' }}>{t.title.split(',')[1] || ''}</span>
+             </motion.h1>
+             <motion.p
+                initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} transition={{delay:0.2}}
+                className="text-lg md:text-xl font-sans text-white/50 max-w-2xl mx-auto font-light leading-relaxed mb-12"
+             >
+               {t.subtitle}
+             </motion.p>
+             
+             <motion.div initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} transition={{delay:0.3}} className="flex flex-col sm:flex-row items-center justify-center gap-4">
+               <button 
+                onClick={() => setHasStarted(true)}
+                className="group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-white text-black font-display font-medium text-lg tracking-wider rounded-full hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+               >
+                 <span>{t.startBtn}</span>
+                 <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+               </button>
+             </motion.div>
+           </div>
+
+           {/* Features / Demo Gallery */}
+           <div className="grid md:grid-cols-2 gap-16 items-center mb-32 border-t border-white/10 pt-24">
+             <div className="space-y-12">
+               <h2 className="text-4xl md:text-5xl font-display font-light tracking-tight text-white mb-8">{t.howItWorks.split(' ')[0]} <span className="italic text-[#D4AF37]" style={{ fontFamily: 'Georgia, serif' }}>{t.howItWorks.split(' ').slice(1).join(' ')}</span></h2>
+               <div className="space-y-8">
+                 {[
+                   { step: '01', title: t.step1, desc: t.step1Desc },
+                   { step: '02', title: t.step2, desc: t.step2Desc },
+                   { step: '03', title: t.step3, desc: t.step3Desc }
+                 ].map((item) => (
+                   <div key={item.step} className="flex gap-6 border-b border-white/10 pb-8 group">
+                     <span className="font-mono text-2xl text-white/30 group-hover:text-[#D4AF37] transition-colors">{item.step}</span>
+                     <div>
+                       <h3 className="text-xl font-display uppercase tracking-wider mb-2 text-white/90">{item.title}</h3>
+                       <p className="font-sans text-white/50 leading-relaxed font-light">{item.desc}</p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
+             <div className="relative">
+               <div className="grid grid-cols-2 gap-4 relative z-10">
+                 {TEMPLATE_IMAGES.slice(0, 4).map((img, idx) => (
+                   <motion.div 
+                     key={img.id}
+                     initial={{opacity:0, y:20}}
+                     whileInView={{opacity:1,y:0}}
+                     viewport={{once:true}}
+                     transition={{delay: idx * 0.1}}
+                     className={`rounded-2xl overflow-hidden border border-white/10 premium-frame ${idx % 2 !== 0 ? 'mt-12' : ''}`}
+                     style={{ aspectRatio: img.aspect_ratio.replace(':', '/') }}
+                   >
+                     <div className="premium-frame-content relative group">
+                        <img src={img.imageUrl} alt={img.location} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                           <p className="font-display text-lg text-white">{img.location}</p>
+                           <p className="font-sans text-xs text-[#D4AF37] opacity-80">{img.template_description}</p>
+                        </div>
+                     </div>
+                   </motion.div>
+                 ))}
+               </div>
+             </div>
+           </div>
+
+           {/* Call to action */}
+           <div className="relative overflow-hidden rounded-3xl border border-[#D4AF37]/20 bg-[#0a0a0c] p-12 md:p-24 text-center shadow-[0_0_100px_rgba(212,175,55,0.05)] mt-16">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#D4AF37]/10 via-[#0a0a0c] to-black opacity-80 pointer-events-none"></div>
+              
+              <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+              
+              <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
+                 <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center mb-8 border border-[#D4AF37]/30 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                   <Plane className="w-8 h-8 text-[#D4AF37]" />
+                 </div>
+                 
+                 <h2 className="text-5xl md:text-6xl font-display font-light mb-6 text-white tracking-tight">
+                    {t.journey.split(' ')[0]} {t.journey.split(' ')[1]} <span className="italic text-[#D4AF37]" style={{ fontFamily: 'Georgia, serif' }}>{t.journey.split(' ').slice(2).join(' ')}</span>
+                 </h2>
+                 
+                 <p className="font-sans text-lg text-white/50 mb-12 font-light max-w-lg leading-relaxed">
+                    {t.join}
+                 </p>
+                 
+                 <button 
+                   onClick={() => setHasStarted(true)}
+                   className="group relative inline-flex items-center justify-center px-10 py-5 font-display text-lg tracking-widest uppercase overflow-hidden rounded-full bg-white text-black hover:bg-[#FAFAFA] transition-all hover:scale-105 active:scale-95 duration-300 shadow-[0_0_30px_rgba(255,255,255,0.15)] focus:outline-none focus:ring-4 focus:ring-white/20"
+                 >
+                   <span className="mr-3 font-medium">{t.getStarted}</span>
+                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                 </button>
+
+                 <div className="mt-12 flex items-center justify-center gap-6 opacity-30">
+                   <span className="block w-16 border-b border-[#D4AF37]/50"></span>
+                   <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                   <span className="block w-16 border-b border-[#D4AF37]/50"></span>
+                 </div>
+              </div>
+           </div>
+        </main>
       </div>
-      </>
     );
   }
 
   return (
     <>
-      <audio ref={audioRef} loop src="https://upload.wikimedia.org/wikipedia/commons/e/e5/Kevin_MacLeod_-_A_Mission.ogg" />
       <div className="absolute top-4 right-4 z-50">
         {currentUser ? (
           <div className="flex items-center gap-3 bg-black/50 border border-white/10 rounded-full py-1.5 px-2 pr-4 shadow-lg backdrop-blur-sm">
@@ -1074,13 +1144,13 @@ export default function App() {
               onClick={() => setShowProfileDialog(true)}
               className="ml-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors"
             >
-              Edit Profile
+              {t.editProfile}
             </button>
             <button
               onClick={handleLogout}
               className="ml-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-red-400 transition-colors"
             >
-              Sign Out
+              {t.signOut}
             </button>
           </div>
         ) : (
@@ -1088,7 +1158,7 @@ export default function App() {
             onClick={handleLogin}
             className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-black border border-[#D4AF37] rounded-full py-2 px-4 shadow-lg font-bold transition-colors cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none"
           >
-            <span>Sign In to Save</span>
+            <span>{t.signInToSave}</span>
           </button>
         )}
       </div>
@@ -1111,27 +1181,6 @@ export default function App() {
           }
         } as any}
       />
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-black/50 border border-white/20 p-2 rounded-full backdrop-blur-md shadow-xl hover:bg-black/70 transition-colors">
-        <input 
-          type="range" 
-          min="0" 
-          max="1" 
-          step="0.05" 
-          value={volume}
-          onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="w-16 accent-[#D4AF37] ml-2"
-          aria-label="Volume Control"
-        />
-        <button 
-          onClick={toggleMusic}
-          className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-[#D4AF37] transition"
-          title="Toggle Music"
-          aria-label={isMusicPlaying ? 'Pause Background Music' : 'Play Background Music'}
-          aria-pressed={isMusicPlaying}
-        >
-          {isMusicPlaying ? <Music className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-        </button>
-      </div>
 
     <div className="max-w-6xl mx-auto pl-4 pr-6 sm:px-8 py-12 relative z-10">
       {/* Toast Container */}
@@ -1190,7 +1239,7 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
 
-              <h2 className="text-3xl font-display text-white mb-6">Export Album</h2>
+              <h2 className="text-3xl font-display text-white mb-6">{t.exportAlbum}</h2>
               
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
                 <div>
@@ -1375,7 +1424,7 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
               
-              <h2 className="text-2xl font-display mb-4 text-white">Share Adventure</h2>
+              <h2 className="text-2xl font-display mb-4 text-white">{t.share}</h2>
               <img src={sharingDestination.imageUrl} alt="Preview" className="w-full h-48 object-cover rounded-xl mb-6 shadow-lg" />
               
               <div className="space-y-3">
@@ -1386,7 +1435,7 @@ export default function App() {
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1A91DA] text-white py-3 rounded-xl transition-all font-sans font-bold shadow-lg cursor-pointer"
                 >
-                  Share to X / Twitter
+                  {t.shareX}
                 </button>
                 <button 
                   onClick={async () => {
@@ -1441,7 +1490,7 @@ export default function App() {
               <span>1. Upload subjects {isDragging && <span className="text-sm ml-2 text-[#D4AF37]">Drop images here</span>}</span>
             </h2>
             <h3 className="mb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37]">{characterCount}/10 Pets • {objectCount}/20 Objects</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37]">{characterCount}/10 {t.pets} • {objectCount}/20 {t.objects}</span>
             </h3>
             
             <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -1474,8 +1523,8 @@ export default function App() {
                           onChange={(e) => updateSubjectType(s.id, e.target.value as 'character' | 'object')}
                           className="bg-transparent text-[10px] uppercase tracking-widest text-white/60 focus:outline-none border-b border-white/20 focus:border-[#D4AF37] cursor-pointer outline-none"
                         >
-                          <option value="character" className="bg-[#121217]">Pet</option>
-                          <option value="object" className="bg-[#121217]">Object</option>
+                          <option value="character" className="bg-[#121217]">{t.pet}</option>
+                          <option value="object" className="bg-[#121217]">{t.object}</option>
                         </select>
                         {s.type === 'object' && (
                           <select 
@@ -1522,7 +1571,7 @@ export default function App() {
                 }}
                 className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 bg-white/5 font-display text-lg tracking-wider text-white hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 focus:ring-2 focus:ring-white/30 focus:outline-none cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Add Pet
+                <Plus className="w-4 h-4" /> {t.addCh}
               </button>
               <button 
                 disabled={objectCount >= 20}
@@ -1532,9 +1581,55 @@ export default function App() {
                 }}
                 className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 bg-white/5 font-display text-lg tracking-wider text-white hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 focus:ring-2 focus:ring-white/30 focus:outline-none cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Add Object
+                <Plus className="w-4 h-4" /> {t.addObj}
               </button>
             </div>
+
+            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-white/10">
+               <div className="flex justify-between items-center relative">
+                 <button 
+                   onClick={() => setShowPresetsMenu(!showPresetsMenu)}
+                   className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] hover:text-white transition-colors"
+                 >
+                   {t.loadPreset}
+                 </button>
+                 <button 
+                   onClick={() => {
+                      if(subjects.length === 0) return;
+                      const name = prompt(t.savePresetPrompt);
+                      if(name) {
+                        const newPresets = [...subjectPresets, {name, subjects}];
+                        setSubjectPresets(newPresets);
+                        localStorage.setItem('pawpassport-subject-presets', JSON.stringify(newPresets));
+                        addToast(`${t.presetSaved.replace('!', '')} "${name}"!`, 'success');
+                      }
+                   }}
+                   disabled={subjects.length === 0}
+                   className="text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors disabled:opacity-50"
+                 >
+                   {t.savePreset}
+                 </button>
+                 
+               </div>
+               {showPresetsMenu && subjectPresets.length > 0 && (
+                 <div className="bg-black/50 border border-white/10 rounded-xl p-3 grid gap-2">
+                    {subjectPresets.map((preset, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-sm p-2 hover:bg-white/5 rounded-lg">
+                        <span className="font-sans font-medium text-white/90">{preset.name}</span>
+                        <div className="flex gap-2">
+                           <button onClick={() => { setSubjects(preset.subjects); setShowPresetsMenu(false); }} className="text-[#D4AF37] hover:text-[#FBBF24]">{t.load}</button>
+                           <button onClick={() => {
+                             const newPresets = subjectPresets.filter((_, i) => i !== idx);
+                             setSubjectPresets(newPresets);
+                             localStorage.setItem('pawpassport-subject-presets', JSON.stringify(newPresets));
+                           }} className="text-red-400 hover:text-red-300">{t.del}</button>
+                        </div>
+                      </div>
+                    ))}
+                 </div>
+               )}
+            </div>
+
             <input 
               type="file" 
               ref={fileInputRef}
@@ -1550,12 +1645,12 @@ export default function App() {
             <div className="glass-panel p-6 rounded-3xl shadow-xl">
               <h2 className="text-xl font-display mb-6 flex items-center gap-2 text-white">
                 <Settings className="w-5 h-5 text-[#D4AF37]" />
-                Advanced Settings
+                {t.advancedSettings}
               </h2>
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Aspect Ratio</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">{t.aspectRatio}</label>
                   <div className="flex flex-wrap gap-2">
                     {ASPECT_RATIOS.map(r => {
                       const [w, h] = r.split(':').map(Number);
@@ -1580,7 +1675,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Style Preset</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">{t.stylePreset}</label>
                   <div className="relative">
                     <select 
                       value={stylePreset}
@@ -1660,7 +1755,7 @@ export default function App() {
                 className="tour-step-advanced flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors border-b border-white/10 hover:border-white/50 focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none focus:border-transparent rounded px-1 cursor-pointer pb-1"
               >
                 <Settings className="w-4 h-4" />
-                {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
+                {showAdvanced ? t.hideAdvancedSettings : t.showAdvancedSettings}
               </button>
             </div>
             
@@ -1702,7 +1797,7 @@ export default function App() {
                     disabled={pastDestinations.length === 0 || isGenerating}
                     className="bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                   >
-                    Undo
+                    {t.undo}
                   </button>
                   <button
                     type="button"
@@ -1710,7 +1805,7 @@ export default function App() {
                     disabled={futureDestinations.length === 0 || isGenerating}
                     className="bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                   >
-                    Redo
+                    {t.redo}
                   </button>
                 </div>
                 <button 
@@ -1726,7 +1821,7 @@ export default function App() {
                   ) : (
                     <>
                       <Plane className="w-5 h-5" />
-                      3. Generate holiday snap!
+                      {t.generate}
                     </>
                   )}
                 </button>
@@ -1796,7 +1891,7 @@ export default function App() {
           {destinations.length > 0 && (
             <div className="pt-12">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
-                <h2 className="text-3xl sm:text-4xl font-display text-white">Travel Album</h2>
+                <h2 className="text-3xl sm:text-4xl font-display text-white">{t.album}</h2>
                 <div className="flex items-center gap-4">
                   {destinations.some(d => d.imageUrl) && (
                     <button 
@@ -1804,7 +1899,7 @@ export default function App() {
                       className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#D4AF37] hover:text-white border-b border-transparent hover:border-white pb-1 transition-all cursor-pointer"
                     >
                       <Download className="w-4 h-4" />
-                      Export Album
+                      {t.exportAlbum}
                     </button>
                   )}
                 </div>
@@ -1831,8 +1926,8 @@ export default function App() {
                   className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
                   <option value="all" className="bg-[#121217]">All Subjects</option>
-                  <option value="character" className="bg-[#121217]">Pets</option>
-                  <option value="object" className="bg-[#121217]">Objects</option>
+                  <option value="character" className="bg-[#121217]">{t.pets}</option>
+                  <option value="object" className="bg-[#121217]">{t.objects}</option>
                 </select>
                 <select
                   value={dateFilter}
@@ -1887,11 +1982,13 @@ export default function App() {
                           </div>
                         ) : dest.imageUrl ? (
                           <>
-                            <img 
-                              src={dest.imageUrl} 
-                              alt={dest.prompt}
-                              className="w-full h-full object-cover rounded-xl transition-transform duration-700 hover:scale-[1.03] opacity-90 group-hover:opacity-100"
-                            />
+                            <div className={`w-full h-full filter-${dest.filter || 'none'} animate-${dest.animation || 'none'}`}>
+                              <img 
+                                src={dest.imageUrl} 
+                                alt={dest.prompt}
+                                className="w-full h-full object-cover rounded-xl transition-transform duration-700 hover:scale-[1.03] opacity-90 group-hover:opacity-100"
+                              />
+                            </div>
                             <div className="absolute -bottom-2 -right-4 w-28 h-28 opacity-40 mix-blend-screen pointer-events-none transform -rotate-12 group-hover:-rotate-6 transition-transform duration-500 z-20">
                               <svg viewBox="0 0 100 100" className="w-full h-full text-[#D4AF37] fill-current">
                                 <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="6 3" />
@@ -1911,6 +2008,33 @@ export default function App() {
                             "{dest.description}"
                           </p>
                         )}
+                        {dest.imageUrl && (
+                          <div className="flex items-center gap-2 mt-4">
+                            <select 
+                              value={dest.filter || 'none'}
+                              onChange={(e) => {
+                                setDestinations(prev => prev.map(d => d.id === dest.id ? {...d, filter: e.target.value} : d));
+                              }}
+                              className="bg-black/50 border border-white/10 rounded-md py-1 px-2 text-xs font-sans text-white focus:outline-none"
+                            >
+                              <option value="none">No Filter</option>
+                              <option value="sepia">Sepia</option>
+                              <option value="grayscale">B&W</option>
+                              <option value="vintage">Vintage</option>
+                            </select>
+                            <select 
+                              value={dest.animation || 'none'}
+                              onChange={(e) => {
+                                setDestinations(prev => prev.map(d => d.id === dest.id ? {...d, animation: e.target.value} : d));
+                              }}
+                              className="bg-black/50 border border-white/10 rounded-md py-1 px-2 text-xs font-sans text-white focus:outline-none"
+                            >
+                              <option value="none">Static</option>
+                              <option value="parallax">Parallax</option>
+                              <option value="shimmer">Shimmer</option>
+                            </select>
+                          </div>
+                        )}
                       </div>
                       <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between px-2">
                         <div className="flex flex-col">
@@ -1926,13 +2050,18 @@ export default function App() {
                             >
                               <Heart className="w-4 h-4" fill={dest.isFavorite ? "currentColor" : "none"} />
                             </button>
-                            <button
-                              onClick={() => handleDownloadImage(dest.imageUrl!, `pet-passport-${dest.id}`)}
-                              className="p-2 text-white/50 hover:text-[#D4AF37] hover:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
-                              title="Download Image"
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
+                            <div className="relative group">
+                              <button
+                                className="p-2 text-white/50 hover:text-[#D4AF37] hover:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                                title="Download Image"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                              <div className="absolute bottom-full mb-2 right-0 hidden group-hover:flex flex-col gap-1 bg-[#121217] border border-white/10 rounded-lg shadow-xl p-1 z-50">
+                                <button onClick={() => handleDownloadImage(dest.imageUrl!, `pet-passport-${dest.id}`, 'png')} className="px-3 py-1.5 text-xs text-white hover:bg-white/10 rounded text-left w-full whitespace-nowrap">PNG</button>
+                                <button onClick={() => handleDownloadImage(dest.imageUrl!, `pet-passport-${dest.id}`, 'jpeg')} className="px-3 py-1.5 text-xs text-white hover:bg-white/10 rounded text-left w-full whitespace-nowrap">JPEG</button>
+                              </div>
+                            </div>
                             <button
                               onClick={() => setSharingDestination(dest)}
                               className="p-2 text-white/50 hover:text-[#D4AF37] hover:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"

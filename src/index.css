@@ -101,3 +101,49 @@ h1, h2, h3, h4, .font-display {
   border: 1px solid var(--color-premium-border);
 }
 
+.atmosphere {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  filter: blur(40px);
+  opacity: 0.8;
+}
+
+.nav-pill {
+  border: 1px solid var(--color-premium-border);
+  border-radius: 100px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: transparent;
+}
+
+.filter-sepia img { filter: sepia(100%); }
+.filter-grayscale img { filter: grayscale(100%); }
+.filter-vintage img { filter: sepia(50%) contrast(150%) saturate(150%); }
+
+@keyframes gentle-parallax {
+  0% { transform: scale(1.05) translate(0, 0); }
+  25% { transform: scale(1.05) translate(-1%, 1%); }
+  50% { transform: scale(1.05) translate(1%, -1%); }
+  75% { transform: scale(1.05) translate(1%, 1%); }
+  100% { transform: scale(1.05) translate(0, 0); }
+}
+
+.animate-parallax img {
+  animation: gentle-parallax 20s infinite ease-in-out;
+}
+
+@keyframes gentle-shimmer {
+  0% { filter: contrast(1) brightness(1); }
+  50% { filter: contrast(1.1) brightness(1.15); }
+  100% { filter: contrast(1) brightness(1); }
+}
+
+.animate-shimmer img {
+  animation: gentle-shimmer 4s infinite ease-in-out;
+}
+
+
