@@ -43,6 +43,11 @@ service cloud.firestore {
       allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
       
+      match /data/appData {
+      	allow get: if isOwner(userId) && isValidId(userId);
+        allow update, create: if isOwner(userId) && isValidId(userId);
+      }
+      
       match /subjects/{subjectId} {
         allow read: if isOwner(userId) && isValidId(userId) && isValidId(subjectId);
         allow list: if isOwner(userId) && isValidId(userId);

@@ -277,6 +277,28 @@ export default function App() {
     });
   }, []);
 
+  // Fetch initial data from Firestore when user logs in
+  useEffect(() => {
+    if (!currentUser) return;
+    let isInitialLoad = true;
+    try {
+      const unsub = onSnapshot(doc(db, 'users', currentUser.uid, 'data', 'appData'), (docSnap) => {
+        if (docSnap.exists() && isInitialLoad) {
+          const data = docSnap.data();
+          if (data.subjects && data.subjects.length > 0) setSubjects(data.subjects);
+          if (data.destinations && data.destinations.length > 0) setDestinations(data.destinations);
+          if (data.subjectPresets && data.subjectPresets.length > 0) setSubjectPresets(data.subjectPresets);
+          isInitialLoad = false;
+        }
+      }, (err) => {
+        console.error("Firestore sync error:", err);
+      });
+      return () => unsub();
+    } catch(err) {
+      console.error(err);
+    }
+  }, [currentUser]);
+
   const handleLogin = async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -351,28 +373,28 @@ export default function App() {
   const tourSteps: Step[] = [
     {
       target: 'body',
-      content: 'Welcome to PawPassport! Send your pets on a global adventure with stunning AI-generated photos.',
+      content: t.tourHero,
       placement: 'center',
     },
     {
       target: '.tour-step-upload',
-      content: 'Upload clear photos of your pets or objects. Ensure good lighting and a visible subject!',
+      content: t.tourUpload,
     },
     {
       target: '.tour-step-destination',
-      content: 'Enter a famous global location where you want your pet to travel.',
+      content: t.tourDest,
     },
     {
       target: '.tour-step-ai-ideas',
-      content: 'Stuck? Let our AI suggest some creative travel ideas based on your pet and destination.',
+      content: t.tourIdeas,
     },
     {
       target: '.tour-step-advanced',
-      content: 'Want more control? Configure aspect ratio, stylistic presets, or add negative prompts here.',
+      content: t.tourAdvanced,
     },
     {
       target: '.tour-step-generate',
-      content: 'Click here to capture the moment!',
+      content: t.tourGenerate,
     }
   ];
 
@@ -426,7 +448,7 @@ export default function App() {
         saveAs(content, `${exportName || 'album'}.zip`);
         addToast('Travel album ZIP downloaded!', 'success');
       } else {
-        const pdf = new jsPDF();
+        const pdf = new jsPDF({ orientation: 'landscape', format: 'a5' });
         let isFirstPage = true;
 
         for (let i = 0; i < loadedDests.length; i++) {
@@ -448,17 +470,45 @@ export default function App() {
             reader.readAsDataURL(blob);
           });
 
-          // Add Image
-          pdf.addImage(base64, 'JPEG', 20, 20, 170, 170); // A placeholder size
-          
-          // Add text
-          pdf.setFontSize(16);
-          pdf.text("Destination: " + dest.prompt, 20, 200, { maxWidth: 170 });
-          
+          // Style the passport page
+          pdf.setFillColor('#121217'); // Dark Background
+          pdf.rect(0, 0, 210, 148, 'F'); // A5 landscape
+
+          pdf.setTextColor('#D4AF37'); // Gold Text
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(22);
+          pdf.text("PawPassport Official Visa", 10, 20);
+
+          // Add Image like a stamp
+          pdf.addImage(base64, 'JPEG', 10, 30, 90, 90); 
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(12);
+          pdf.setTextColor('#FFFFFF');
+          pdf.text(`ISSUED: ${new Date().toLocaleDateString()}`, 110, 40);
+          pdf.text(`DESTINATION:`, 110, 55);
+          pdf.setTextColor('#D4AF37');
+          pdf.setFontSize(14);
+          pdf.text(dest.prompt, 110, 65, { maxWidth: 90 });
+
           if (exportIncludeDescriptions && dest.description) {
-            pdf.setFontSize(12);
-            pdf.text("Description: " + dest.description, 20, 210, { maxWidth: 170 });
+            pdf.setFontSize(10);
+            pdf.setTextColor('#AAAAAA');
+            pdf.text(dest.description, 110, 80, { maxWidth: 90 });
           }
+          
+          pdf.setDrawColor('#D4AF37');
+          pdf.setLineWidth(0.5);
+          pdf.line(10, 130, 200, 130);
+          
+          // Machine readable zone mockup
+          pdf.setFont('courier', 'bold');
+          pdf.setFontSize(11);
+          pdf.setTextColor('#555555');
+          const str1 = `P<PAW${dest.prompt.substring(0, 20).toUpperCase().replace(/[^A-Z]/g, '<')}<<<<<<<<<<<<<<<<<<<<<<`;
+          const str2 = `A1B2C3D4E5${new Date().getFullYear()}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<`;
+          pdf.text(str1.substring(0, 44), 10, 138);
+          pdf.text(str2.substring(0, 44), 10, 145);
         }
         setExportProgress(100);
 
@@ -551,18 +601,30 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
   
-  // Save to localStorage effects
+  // Save to localStorage & Firestore effects
   useEffect(() => {
     localStorage.setItem('pawpassport-subjects', JSON.stringify(subjects));
     if (subjects.length > 0) {
       localStorage.setItem('pawpassport-started', 'true');
       setHasStarted(true);
     }
-  }, [subjects]);
+    if (currentUser) {
+      setDoc(doc(db, 'users', currentUser.uid, 'data', 'appData'), { subjects }, { merge: true }).catch(err => console.error(err));
+    }
+  }, [subjects, currentUser]);
 
   useEffect(() => {
     localStorage.setItem('pawpassport-destinations', JSON.stringify(destinations));
-  }, [destinations]);
+    if (currentUser) {
+      setDoc(doc(db, 'users', currentUser.uid, 'data', 'appData'), { destinations }, { merge: true }).catch(err => console.error(err));
+    }
+  }, [destinations, currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      setDoc(doc(db, 'users', currentUser.uid, 'data', 'appData'), { subjectPresets }, { merge: true }).catch(err => console.error(err));
+    }
+  }, [subjectPresets, currentUser]);
   
   // Config state
   const [selectedAspectRatio, setSelectedAspectRatio] = useState("9:16");

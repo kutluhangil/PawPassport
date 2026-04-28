@@ -54,7 +54,13 @@ export const dict = {
     savePresetPrompt: "Enter a name for this preset group:",
     presetSaved: "Preset saved!",
     load: "Load",
-    del: "Del"
+    del: "Del",
+    tourHero: "Welcome to PawPassport! Send your pets on a global adventure with stunning AI-generated photos.",
+    tourUpload: "Upload clear photos of your pets or objects. Ensure good lighting and a visible subject!",
+    tourDest: "Enter a famous global location where you want your pet to travel.",
+    tourIdeas: "Stuck? Let our AI suggest some creative travel ideas based on your pet and destination.",
+    tourAdvanced: "Want more control? Configure aspect ratio, stylistic presets, or add negative prompts here.",
+    tourGenerate: "Click here to capture the moment!"
   },
   tr: {
     title: "Evden Çıkmadan Küresel Maceralar.",
@@ -111,6 +117,12 @@ export const dict = {
     savePresetPrompt: "Bu şablon grubu için bir isim girin:",
     presetSaved: "Şablon kaydedildi!",
     load: "Yükle",
-    del: "Sil"
+    del: "Sil",
+    tourHero: "PawPassport'a Hoşgeldiniz! Çarpıcı yapay zeka fotoğraflarıyla evcil hayvanlarınızı küresel bir maceraya gönderin.",
+    tourUpload: "Evcil hayvanlarınızın veya nesnelerinizin net fotoğraflarını yükleyin. İyi aydınlatma ve görünür bir özne olduğundan emin olun!",
+    tourDest: "Evcil hayvanınızın seyahat etmesini istediğiniz ünlü bir küresel konumu girin.",
+    tourIdeas: "Takıldınız mı? Yapay zekamızın evcil hayvanınıza ve hedefinize dayalı bazı yaratıcı seyahat fikirleri önermesine izin verin.",
+    tourAdvanced: "Daha fazla kontrol mü istiyorsunuz? Çözünürlüğü, stil şablonlarını yapılandırın veya buraya negatif istemler ekleyin.",
+    tourGenerate: "Anı yakalamak için buraya tıklayın!"
   }
 };
