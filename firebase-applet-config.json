@@ -1,10 +1,10 @@
 {
-  "projectId": "subscriptionhub-85b02",
-  "appId": "1:86302718224:web:fdc9408d0e2fdee2050d95",
+  "projectId": "minikgezginpati",
+  "appId": "1:1093805017468:web:ab7d93ccbbf1e80f183cf9",
   "apiKey": "",
-  "authDomain": "subscriptionhub-85b02.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-8ebd1b7a-c921-45d3-8e25-222b5a803faa",
-  "storageBucket": "subscriptionhub-85b02.firebasestorage.app",
-  "messagingSenderId": "86302718224",
+  "authDomain": "minikgezginpati.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "minikgezginpati.firebasestorage.app",
+  "messagingSenderId": "1093805017468",
   "measurementId": ""
 }
