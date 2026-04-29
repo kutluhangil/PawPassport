@@ -1,6 +1,7 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ * MinikGezgin v1.0.1 — build fix: i18n, light mode, album layout
 */
 
 import React, { useState, useRef, useEffect } from 'react';
