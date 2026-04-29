@@ -1,205 +1,252 @@
 <div align="center">
 
 ```
- /\_____/\
-(  🐱  🐱 )    M i n i k   G e z g i n
- ( o   o )   ~~~~~~~~~~~~~~~~~~~~~~~~
-  =( Y )=    Küçük Patilerle Büyük Maceralar
-   )   (
-  (_)-(_)
+███╗   ███╗██╗███╗   ██╗██╗██╗  ██╗ ██████╗ ███████╗███████╗ ██████╗ ██╗███╗   ██╗
+████╗ ████║██║████╗  ██║██║██║ ██╔╝██╔════╝ ██╔════╝╚══███╔╝██╔════╝ ██║████╗  ██║
+██╔████╔██║██║██╔██╗ ██║██║█████╔╝ ██║  ███╗█████╗    ███╔╝ ██║  ███╗██║██╔██╗ ██║
+██║╚██╔╝██║██║██║╚██╗██║██║██╔═██╗ ██║   ██║██╔══╝   ███╔╝  ██║   ██║██║██║╚██╗██║
+██║ ╚═╝ ██║██║██║ ╚████║██║██║  ██╗╚██████╔╝███████╗███████╗╚██████╔╝██║██║ ╚████║
+╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝
 ```
 
-### 🐾 Küçük Patilerle Büyük Maceralar
+### Your Pet's AI-Powered Passport to the World 🐾
 
-*Evcil hayvanlarınızın günlük fotoğraflarını nefes kesici seyahat anılarına dönüştürün. AI ile.*
+*Evcil hayvanlarınızı yapay zeka gücüyle dünyanın her köşesine taşıyın — tek fotoğrafla.*
 
 ---
 
-[![Version](https://img.shields.io/badge/version-1.0.0-C8FF00?style=flat-square&labelColor=0A0A0B)](https://github.com/kutluhangil/MinikGezgin)
+[![Version](https://img.shields.io/badge/version-1.0.0-D4AF37?style=flat-square&labelColor=0A0A0B)](https://github.com/kutluhangil/MinikGezgin)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white&labelColor=0A0A0B)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19-white?style=flat-square&logo=react&logoColor=white&labelColor=0A0A0B)](https://react.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white&labelColor=0A0A0B)](https://tailwindcss.com/)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth_&_DB-FFCA28?style=flat-square&logo=firebase&logoColor=black&labelColor=0A0A0B)](https://firebase.google.com/)
-[![Gemini API](https://img.shields.io/badge/Gemini_API-AI-4285F4?style=flat-square&logo=google&logoColor=white&labelColor=0A0A0B)](https://ai.google.dev/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-C8FF00?style=flat-square&labelColor=0A0A0B)](LICENSE)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black&labelColor=0A0A0B)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white&labelColor=0A0A0B)](https://vitejs.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-FFCA28?style=flat-square&logo=firebase&logoColor=black&labelColor=0A0A0B)](https://firebase.google.com/)
+[![Gemini AI](https://img.shields.io/badge/Google_Gemini-3.1_Flash_Image-4285F4?style=flat-square&logo=google&logoColor=white&labelColor=0A0A0B)](https://ai.google.dev/)
+[![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-white?style=flat-square&logo=vercel&logoColor=black&labelColor=0A0A0B)](https://minik-gezgin.vercel.app/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-D4AF37?style=flat-square&labelColor=0A0A0B)](LICENSE)
 
 ---
 
-[**Uygulamaya Git**](https://freelora.app) · [**Hata Bildir**](https://github.com/kutluhangil/MinikGezgin/issues) · [**Özellik İste**](https://github.com/kutluhangil/MinikGezgin/issues/new)
+**[🌐 Live Demo](https://minik-gezgin.vercel.app/)**
 
 </div>
 
 ---
 
-## MinikGezgin Nedir?
+## What is MinikGezgin?
 
 <details open>
 <summary><strong>Türkçe Açıklama</strong></summary>
 <br>
 
-MinikGezgin 🐾, evcil hayvanlarınızın günlük fotoğraflarını nefes kesici seyahat anılarına dönüştürmenizi sağlayan bir yapay zeka web uygulamasıdır. Google'ın güçlü **Gemini Flash Image** modelini kullanarak, evcil hayvanlarınızı Paris'ten Mars'a kadar hayal edebileceğiniz her yere gönderebilirsiniz.
+MinikGezgin, evcil hayvanlarınızın fotoğraflarını yapay zeka ile dünya genelindeki ikonik mekânlara yerleştiren bir seyahat albümü uygulamasıdır. Tek bir fotoğraf yükleyin, hedef belirleyin — gerisini Gemini halleder.
 
-**Neden MinikGezgin?**
-- Evden çıkmadan dünyanın her yerinde (ve uzayda!) fotoğraflar oluşturun
-- Kendi evcil hayvanlarınızı (Pet) ve eşyalarınızı (Object) sisteme tanıtın
-- Yapay zeka ile mükemmel aydınlatma, gölgelendirme ve arka plana uyum
-- Seyahat albümünüzü oluşturun, paylaşın veya PDF / ZIP olarak dışa aktarın
+**Neden MinikGezgin?** Bahçeyi hiç terk etmeden Machu Picchu'ya tırmanan, Venedik'te gondolda sallanan ya da Mars'ta yürüyen evcil hayvanınızın fotoğrafını saniyeler içinde elde edin.
 
 </details>
+<br>
 
-MinikGezgin 🐾 is an AI-powered web application that lets you transform everyday photos of your pets into breathtaking travel memories. Powered by Google's **Gemini Flash Image** model, you can send your pets anywhere—from Paris to Mars.
+**MinikGezgin** is an AI-powered travel album studio that transforms ordinary pet photos into breathtaking, photorealistic travel memories. Upload a photo of your pet (or any subject), pick a destination anywhere on Earth — or beyond — and let **Gemini 3.1 Flash Image** render a stunning composite scene in seconds.
 
----
-
-## Özellikler
-
-| # | Özellik | Açıklama |
-|---|---------|----------|
-| 🐈 | **Karakter ve Nesne Ekleme** | Evcil hayvanlarınızın ve eşyalarınızın fotoğraflarını yükleyerek yapay zekaya tanıtın. |
-| 🌍 | **Sonsuz Hedef Seçeneği** | Dilediğiniz mekanı ve atmosferi (örn. "Eyfel Kulesi", "Tokyo Sokakları") belirterek eşsiz görseller üretin. |
-| 🎨 | **Stil Şablonları & Ayarlar** | Cinematic, Cyberpunk, Watercolor gibi stil filtreleri, Çözünürlük ve Aspect Ratio (1:1, 16:9 vs.) ayarı. |
-| 🎞️ | **Filtre ve Animasyonlar** | Oluşturulan resimlere Sepia, B&W (Siyah Beyaz) ve Vintage gibi filtreler; Parallax, Shimmer gibi animasyonlar ekleyin. |
-| 📖 | **Seyahat Albümü** | Yaratılan tüm anıları kendi dijital albümünüzde toplayın, dilediklerinizi favorilere ekleyin. |
-| 📦 | **Dışa Aktarma (Export)** | Oluşturduğunuz dijital pasaport anılarınızı tek tıkla PDF veya ZIP formatında indirin, dilerseniz PNG/JPEG indirin. |
-| ✨ | **Gemini AI Altyapısı** | `@google/genai` ile güçlü istem oluşturma ve kusursuz görüntü harmanlama yetenekleri. |
-| 🌍 | **Çoklu Dil** | Türkçe (TR) ve İngilizce (EN) arayüz desteği. |
-| 🔐 | **Cloud Storage & Auth** | Firebase desteğiyle resimlerinizi ve albümünüzü güvenle bulutta saklayın. |
-| 📱 | **Responsive** | Masaüstü cihazlar ve modern mobil cihazlar için optimize edilmiş akıcı arayüz. |
+Built for pet owners, creators, and anyone who believes adventure should have no limits.
 
 ---
 
-## Ekran Görüntüleri
+## Features
 
-> `public/og.png` oluşturulduktan sonra buraya gerçek ekran görüntüleri eklenecek.
-
-| Stüdyo | Seyahat Albümü | Gelişmiş Ayarlar |
-|-----------|-----------|----------|
-| *(yakında)* | *(yakında)* | *(yakında)* |
+| # | Feature | Description |
+|---|---------|-------------|
+| 🤖 | **AI Image Generation** | Powered by Gemini 3.1 Flash Image — photorealistic composites from a single upload |
+| 🌍 | **Infinite Destinations** | Type any location, scene, or concept — from the Colosseum to a cyberpunk city |
+| 💡 | **AI Inspiration Engine** | Generate creative travel ideas tailored to your pet's name and style |
+| 🖼️ | **Travel Album** | Auto-saved gallery with filters, favorites, sorting, and export |
+| 🎨 | **Image Filters & FX** | Apply Vintage, Retro, Grayscale filters and Parallax/Shimmer animations |
+| 🌗 | **Dark & Light Mode** | Premium warm-cream light mode and deep-space dark mode |
+| 🌐 | **Bilingual UI** | Full Turkish and English interface — switch instantly |
+| 👤 | **Google Auth** | Sign in with Google to sync your album across devices via Firebase |
+| 📤 | **Export & Share** | Download individual stamps or bulk-export your full album as a ZIP |
+| 📱 | **Mobile-First** | Fully responsive — works beautifully on phones, tablets, and desktops |
+| 🎯 | **Guided Onboarding** | Interactive step-by-step tour for first-time users |
 
 ---
 
-## Teknoloji Yığını
+## Tech Stack
 
 ```
-Frontend & Core
-├── React 19
-├── TypeScript 5 (strict mode)
-├── Tailwind CSS 4.0 
-├── Vite 6
-├── Framer Motion 12 (Motion/React - animasyonlar)
-└── Lucide React (İkonlar)
+Frontend & UI
+├── React 18          (Functional Components, Hooks, AnimatePresence)
+├── TypeScript        (strict mode)
+├── Tailwind CSS v4   (Custom design tokens, dark/light mode)
+├── Framer Motion     (Page transitions and micro-animations)
+├── Lucide React      (Icon system)
+└── Vite 5            (Fast build & HMR)
 
-AI & Image Generation
-├── @google/genai (Gemini 3.1 Flash Image)
-└── HTML5 Canvas API (İstemci tabanlı görsel süreçler)
+AI & Generation
+├── Google Generative AI  (@google/genai — Gemini 3.1 Flash Image)
+├── Text-to-Image         (Subject-aware compositional rendering)
+└── AI Suggestion Engine  (Dynamic idea generation per pet)
 
-Data, Auth & Backend Services
-├── Firebase Auth (Kimlik doğrulama)
-├── Firebase Client (Firestore/Storage veritabanı eşitlemeleri)
-├── JSZip / FileSaver.js (Albüm dışa aktarımı)
-└── jsPDF (PDF export)
+Auth & Backend
+├── Firebase Auth         (Google Sign-In)
+├── Cloud Firestore       (User profiles, saved destinations, favorites)
+└── Firebase Storage      (Profile assets)
 
-Infrastructure
-├── Google Cloud Run (Hosting)
-└── AI Studio Build Environment
+Deployment
+├── Vercel                (CI/CD, edge deployment)
+└── GitHub Actions        (Automated deploys on push)
 ```
 
 ---
 
-## Kurulum ve Başlangıç
+## Architecture
 
-### Gereksinimler
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        User Interface                       │
+│       (React, Landing Page, Studio, Album, Modals)          │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                     App State Layer                         │
+│   (useState, useEffect, localStorage, Firebase sync)        │
+│                                                             │
+│  ┌───────────────┐  ┌────────────────┐  ┌───────────────┐  │
+│  │ Subject Mgmt  │  │  Destination   │  │  Album Store  │  │
+│  │ (Upload/Crop) │  │  (Prompt+Desc) │  │ (Filter/Sort) │  │
+│  └───────────────┘  └────────────────┘  └───────────────┘  │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          │                   │                   │
+┌─────────▼──────┐  ┌─────────▼──────┐  ┌────────▼───────┐
+│   Gemini API   │  │  Firebase Auth │  │   Firestore    │
+│ (Image+Ideas)  │  │ (Google OAuth) │  │ (User + Album) │
+└────────────────┘  └────────────────┘  └────────────────┘
+```
 
-- **Node.js** ≥ 20
-- **npm** ≥ 10
-- **Firebase** projesi (Auth ve Firestore için)
-- **Gemini API Anahtarı** (Resim oluşturabilmek için)
+---
 
-### Yerel Geliştirme
+## Getting Started
+
+### Requirements
+
+- **Node.js** ≥ 18
+- **npm** ≥ 9
+- **Google Gemini API Key** — [Get one here](https://aistudio.google.com/app/apikey) *(Paid project required for image generation)*
+- **Firebase Project** — [Create one here](https://console.firebase.google.com/)
+
+### Local Development
 
 ```bash
-# Repoyu klonla
+# Clone the repository
 git clone https://github.com/kutluhangil/MinikGezgin.git
 cd MinikGezgin
 
-# Bağımlılıkları yükle
+# Install dependencies
 npm install
 
-# Environment dosyasını oluştur
-cp .env.example .env.local
-# .env.local dosyasına değişkenlerini ekle (Firebase ve Gemini API Key)
+# Set up environment variables
+cp .env.example .env
+# Edit .env and fill in your API keys (see below)
 
-# Geliştirme sunucusunu başlat
+# Start the development server
 npm run dev
 ```
 
-Uygulama `http://localhost:3000` adresinde çalışacaktır.
+App runs at `http://localhost:5173`
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+# Gemini AI — Required for image generation
+# NOTE: Image generation requires a PAID Google Cloud project!
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Firebase — Required for Auth and Firestore
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
+VITE_FIREBASE_APP_ID=1:000000000000:web:xxxxxxxxxxxx
+```
+
+> ⚠️ **Never commit your `.env` file.** It is already listed in `.gitignore`.
 
 ---
 
-## Ortam Değişkenleri
+## Deployment on Vercel
 
-Uygulamanın çalışması için aşağıdaki anahtarları ortamınıza tanımlamanız gerekir:
+Vercel is the fastest way to deploy MinikGezgin. Follow these steps:
 
-| Değişken | Açıklama | Zorunlu |
-|----------|----------|---------|
-| `VITE_FIREBASE_API_KEY` | Firebase API Key | ✅ (kaydetme işlemleri için) |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | ✅ |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID | ✅ |
-| `GEMINI_API_KEY` | Gemini AI (Google Gen AI) anahtarı | ✅ |
+### Step 1 — Push to GitHub
+Ensure your project is pushed to a GitHub repository (public or private).
 
-*(Not: Ortamınızda kendi Firebase ayarlarınız ve API anahtarınızı yapılandırmayı unutmayın.)*
+### Step 2 — Import to Vercel
+1. Go to [vercel.com](https://vercel.com) and sign in with GitHub.
+2. Click **"Add New" → "Project"**.
+3. Select your `MinikGezgin` repository and click **"Import"**.
 
----
+### Step 3 — Configure Environment Variables
+In the **"Environment Variables"** section, add all variables from your `.env` file:
 
-## Yol Haritası
+| Name | Value |
+|------|-------|
+| `GEMINI_API_KEY` | Your Gemini API key |
+| `VITE_FIREBASE_API_KEY` | Your Firebase API key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | `your-project.firebaseapp.com` |
+| `VITE_FIREBASE_PROJECT_ID` | `your-project-id` |
+| `VITE_FIREBASE_STORAGE_BUCKET` | `your-project.firebasestorage.app` |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Your sender ID |
+| `VITE_FIREBASE_APP_ID` | Your app ID |
 
-### v1.0 — MVP ✅
+### Step 4 — Deploy
+Click **"Deploy"**. Vercel will build and publish your app in ~1–2 minutes.
 
-- [x] Karakter ve nesne yükleme
-- [x] AI Görüntü üretimi (Gemini API entegrasyonu)
-- [x] Stüdyo araçları (en/boy oranı, çözünürlük ayarı)
-- [x] Görüntülere stil ve filtre ekleme
-- [x] Seyahat Albümü panosu ve favoriler
-- [x] Albümü ZIP veya PDF olarak Dışa Aktarma
-- [x] Firebase (Auth ve Cloud Storage)
-- [x] Türkçe (TR) ve İngilizce (EN) çoklu dil desteği
-- [x] X/Twitter paylaşımı
-- [x] Akıllı asistan ipucu butonu ve Onboarding (Joyride)
+### Step 5 — Authorize Domain in Firebase
+Go to **Firebase Console → Authentication → Settings → Authorized Domains** and add your Vercel URL (e.g., `minik-gezgin.vercel.app`).
 
-### v1.1 — Yakında
-
-- [ ] Sosyal Feed Akışı — Kullanıcıların en iyi maceralarını oylarıyla paylaştığı global akış.
-- [ ] Özel arka plan silici araç entegrasyonu
-- [ ] Mükemmel post-prodüksiyon ayarları (Pozlama, doygunluk)
-- [ ] Otomatik "Travel VLOG" video slaytları oluşturma (Video Gen)
+### Continuous Deployment
+Every `git push` to `main` will automatically trigger a new Vercel deployment. No manual steps needed.
 
 ---
 
-## Katkıda Bulunma
+## Firebase Setup
 
-1. Bu repoyu fork'la
-2. Feature branch oluştur: `git checkout -b feature/yeni-ozellik`
-3. Değişikliklerini commit et: `git commit -m 'feat: yeni özellik ekle'`
-4. Branch'ini push et: `git push origin feature/yeni-ozellik`
-5. Pull Request aç
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Enable **Authentication** → **Google Sign-In**
+3. Enable **Cloud Firestore** (start in production mode, then apply rules)
+4. Register a **Web App** and copy the config values to your `.env`
 
-Lütfen kodunuzu `npm run lint` testlerine tabi tuttuğunuzdan ve genel mimari yapıya uygun (Vite/TS/React 19) değişiklikler yaptığınızdan emin olun. 
+### Firestore Security Rules
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
 
 ---
 
-## Lisans
+## License
 
-Bu proje [MIT Lisansı](LICENSE) altında dağıtılmaktadır.
+This project is distributed under the [MIT License](LICENSE).
 
 ---
 
 <div align="center">
 
-🐾 **Built with love by [kutluhangil](https://github.com/kutluhangil/MinikGezgin)** 🐾
+**Built with care by [kutluhangil](https://github.com/kutluhangil/)**
 
-*Minik patilerin büyük maceraları için yapıldı.*
+*Where code meets wanderlust. 🐾✈️*
 
-[![GitHub](https://img.shields.io/badge/GitHub-kutluhangil-C8FF00?style=flat-square&logo=github&logoColor=white&labelColor=0A0A0B)](https://github.com/kutluhangil/MinikGezgin)
+[![GitHub](https://img.shields.io/badge/GitHub-kutluhangil-D4AF37?style=flat-square&logo=github&logoColor=white&labelColor=0A0A0B)](https://github.com/kutluhangil)
+[![Live](https://img.shields.io/badge/Live-minik--gezgin.vercel.app-D4AF37?style=flat-square&logo=vercel&logoColor=white&labelColor=0A0A0B)](https://minik-gezgin.vercel.app/)
 
 </div>
