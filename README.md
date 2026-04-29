@@ -15,7 +15,7 @@
 
 ---
 
-[![Version](https://img.shields.io/badge/version-1.0.0-C8FF00?style=flat-square&labelColor=0A0A0B)](https://github.com/kutluhangil/PawPassport)
+[![Version](https://img.shields.io/badge/version-1.0.0-C8FF00?style=flat-square&labelColor=0A0A0B)](https://github.com/kutluhangil/PatiPasaport)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white&labelColor=0A0A0B)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-white?style=flat-square&logo=react&logoColor=white&labelColor=0A0A0B)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white&labelColor=0A0A0B)](https://tailwindcss.com/)
@@ -25,21 +25,21 @@
 
 ---
 
-[**Uygulamaya Git**](https://freelora.app) · [**Hata Bildir**](https://github.com/kutluhangil/PawPassport/issues) · [**Özellik İste**](https://github.com/kutluhangil/PawPassport/issues/new)
+[**Uygulamaya Git**](https://freelora.app) · [**Hata Bildir**](https://github.com/kutluhangil/PatiPasaport/issues) · [**Özellik İste**](https://github.com/kutluhangil/PatiPasaport/issues/new)
 
 </div>
 
 ---
 
-## PawPassport Nedir?
+## PatiPasaport Nedir?
 
 <details open>
 <summary><strong>Türkçe Açıklama</strong></summary>
 <br>
 
-PawPassport, evcil hayvanlarınızın günlük fotoğraflarını nefes kesici seyahat anılarına dönüştürmenizi sağlayan bir yapay zeka web uygulamasıdır. Google'ın güçlü **Gemini Flash Image** modelini kullanarak, evcil hayvanlarınızı Paris'ten Mars'a kadar hayal edebileceğiniz her yere gönderebilirsiniz.
+PatiPasaport, evcil hayvanlarınızın günlük fotoğraflarını nefes kesici seyahat anılarına dönüştürmenizi sağlayan bir yapay zeka web uygulamasıdır. Google'ın güçlü **Gemini Flash Image** modelini kullanarak, evcil hayvanlarınızı Paris'ten Mars'a kadar hayal edebileceğiniz her yere gönderebilirsiniz.
 
-**Neden PawPassport?**
+**Neden PatiPasaport?**
 - Evden çıkmadan dünyanın her yerinde (ve uzayda!) fotoğraflar oluşturun
 - Kendi evcil hayvanlarınızı (Pet) ve eşyalarınızı (Object) sisteme tanıtın
 - Yapay zeka ile mükemmel aydınlatma, gölgelendirme ve arka plana uyum
@@ -47,7 +47,7 @@ PawPassport, evcil hayvanlarınızın günlük fotoğraflarını nefes kesici se
 
 </details>
 
-PawPassport is an AI-powered web application that lets you transform everyday photos of your pets into breathtaking travel memories. Powered by Google's **Gemini Flash Image** model, you can send your pets anywhere—from Paris to Mars.
+PatiPasaport is an AI-powered web application that lets you transform everyday photos of your pets into breathtaking travel memories. Powered by Google's **Gemini Flash Image** model, you can send your pets anywhere—from Paris to Mars.
 
 ---
 
@@ -119,8 +119,8 @@ Infrastructure
 
 ```bash
 # Repoyu klonla
-git clone https://github.com/kutluhangil/PawPassport.git
-cd PawPassport
+git clone https://github.com/kutluhangil/PatiPasaport.git
+cd PatiPasaport
 
 # Bağımlılıkları yükle
 npm install
@@ -196,10 +196,10 @@ Bu proje [MIT Lisansı](LICENSE) altında dağıtılmaktadır.
 
 <div align="center">
 
-**Built with precision by [kutluhangil](https://github.com/kutluhangil/PawPassport)**
+**Built with precision by [kutluhangil](https://github.com/kutluhangil/PatiPasaport)**
 
 *Evcil hayvanlarımızın dünyayı gezmesi için yapıldı.*
 
-[![GitHub](https://img.shields.io/badge/GitHub-kutluhangil-C8FF00?style=flat-square&logo=github&logoColor=white&labelColor=0A0A0B)](https://github.com/kutluhangil/PawPassport)
+[![GitHub](https://img.shields.io/badge/GitHub-kutluhangil-C8FF00?style=flat-square&logo=github&logoColor=white&labelColor=0A0A0B)](https://github.com/kutluhangil/PatiPasaport)
 
 </div>

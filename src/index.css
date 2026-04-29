@@ -12,15 +12,15 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-premium-dark);
-  color: #FAFAFA;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   position: relative;
   z-index: 0;
-  /* Premium radial gradient background */
-  background-image: radial-gradient(circle at 50% 0%, rgba(20, 20, 30, 0.8) 0%, var(--color-premium-dark) 70%);
   background-attachment: fixed;
+}
+
+.dark body {
+  background-image: radial-gradient(circle at 50% 0%, rgba(20, 20, 30, 0.8) 0%, var(--color-premium-dark) 70%);
 }
 
 h1, h2, h3, h4, .font-display {
@@ -123,6 +123,7 @@ h1, h2, h3, h4, .font-display {
 .filter-sepia img { filter: sepia(100%); }
 .filter-grayscale img { filter: grayscale(100%); }
 .filter-vintage img { filter: sepia(50%) contrast(150%) saturate(150%); }
+.filter-retro img { filter: contrast(120%) saturate(80%) sepia(20%) hue-rotate(-15deg); }
 
 @keyframes gentle-parallax {
   0% { transform: scale(1.05) translate(0, 0); }
@@ -144,6 +145,12 @@ h1, h2, h3, h4, .font-display {
 
 .animate-shimmer img {
   animation: gentle-shimmer 4s infinite ease-in-out;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(200%);
+  }
 }
 
 

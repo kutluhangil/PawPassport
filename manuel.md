@@ -1,4 +1,4 @@
-# PawPassport - Kurulum ve Vercel Canlıya Alma Rehberi
+# PatiPasaport - Kurulum ve Vercel Canlıya Alma Rehberi
 
 ## 1. "GEMINI_API_KEY" Nasıl Alınır?
 
@@ -20,7 +20,7 @@ Projenizde routing sorunlarını önlemek adına `vercel.json` dosyası ayarlanm
 
 1. Yeni bir sekmede **Vercel**'e giriş yapın (Github ile bağlanın).
 2. Sağ üstten **"Add New..." > "Project"** deyin.
-3. PawPassport reponuzu (veyahut Github'a attığınız projeyi) bulup yanındaki **Import** butonuna tıklayın.
+3. PatiPasaport reponuzu (veyahut Github'a attığınız projeyi) bulup yanındaki **Import** butonuna tıklayın.
 4. **Framework Preset** alanı otomatik olarak "Vite" seçilecektir, değiştirmeyin.
 5. Biraz aşağıda **"Environment Variables"** bölümünü genişletin. Burası çok kritik, Firebase ve Gemini bağlantılarını burada tanımlayacağız!
 6. Şu keyleri (anahtarları) sol tarafa, değerlerini sağ tarafa ekleyip tek tek **Add** yapın:

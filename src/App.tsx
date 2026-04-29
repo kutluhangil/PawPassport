@@ -28,7 +28,11 @@ import {
   Heart,
   Check,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Sun,
+  Moon,
+  Crop,
+  User as UserIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Joyride, STATUS, Step } from 'react-joyride';
@@ -37,6 +41,8 @@ import { jsPDF } from 'jspdf';
 import { auth, db } from './lib/firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User, updateProfile } from 'firebase/auth';
 import { collection, doc, setDoc, query, onSnapshot, deleteDoc } from 'firebase/firestore';
+import CropModal from './components/CropModal';
+import UserProfileModal from './components/UserProfileModal';
 
 const saveAs = (blob: Blob, filename: string) => {
   const link = document.createElement('a');
@@ -260,6 +266,15 @@ export default function App() {
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('pawpassport-theme') as 'dark'|'light') || 'dark');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [cropTargetId, setCropTargetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('pawpassport-theme', theme);
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, [theme]);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (user) => {
@@ -310,22 +325,6 @@ export default function App() {
   };
 
   const handleLogout = () => signOut(auth);
-
-  const handleUpdateProfile = async (displayName: string, photoURL: string) => {
-    if (!currentUser) return;
-    try {
-      await updateProfile(currentUser, { displayName, photoURL });
-      // update state manually to trigger re-render
-      setCurrentUser({ ...currentUser, displayName, photoURL } as User);
-      await setDoc(doc(db, 'users', currentUser.uid), {
-        displayName,
-      }, { merge: true });
-      addToast('Profile updated!', 'success');
-      setShowProfileDialog(false);
-    } catch (e: any) {
-      addToast(e.message, 'error');
-    }
-  };
 
   const [runTour, setRunTour] = useState(() => {
     return localStorage.getItem('pawpassport-tour-seen') !== 'true';
@@ -477,7 +476,7 @@ export default function App() {
           pdf.setTextColor('#D4AF37'); // Gold Text
           pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(22);
-          pdf.text("PawPassport Official Visa", 10, 20);
+          pdf.text("PatiPasaport Official Visa", 10, 20);
 
           // Add Image like a stamp
           pdf.addImage(base64, 'JPEG', 10, 30, 90, 90); 
@@ -525,7 +524,6 @@ export default function App() {
     }
   };
 
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [sharingDestination, setSharingDestination] = useState<Adventure | null>(null);
 
   const filteredDestinations = destinations.filter(d => {
@@ -600,6 +598,7 @@ export default function App() {
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
   
   // Save to localStorage & Firestore effects
   useEffect(() => {
@@ -932,19 +931,24 @@ export default function App() {
       console.error("Generation error:", error);
       const errorMessage = (error?.message || error?.toString() || "Failed to generate image").toLowerCase();
       
+      let specificError = "Failed to generate image. " + (error?.message || "");
       if (errorMessage.includes("requested entity was not found") || errorMessage.includes("404") || errorMessage.includes("api key") || errorMessage.includes("api_key")) {
-        addToast("API Key Issue: Please check your Gemini API key in settings or generate a new one.", 'error');
+        specificError = "API Key Issue: Please check your Gemini API key in settings or generate a new one.";
+        addToast(specificError, 'error');
         setShowKeyDialog(true);
       } else if (errorMessage.includes("429") || errorMessage.includes("quota") || errorMessage.includes("exhausted")) {
-        addToast("Quota exceeded: You might need to wait a moment or check your API limits.", 'error');
+        specificError = "Quota exceeded: You might need to wait a moment or check your API limits.";
+        addToast(specificError, 'error');
       } else if (errorMessage.includes("blocked") || errorMessage.includes("safety")) {
-        addToast("Safety block: The generation was blocked by safety filters. Please try modifying your scene description.", 'error');
+        specificError = "Safety block: The generation was blocked by safety filters. Please try modifying your scene description.";
+        addToast(specificError, 'error');
       } else {
-        addToast(`Generation failed: ${error.message || "Unknown error"}. Please modify your request.`, 'error');
+        specificError = "Generation failed: " + (error?.message || "Unknown error") + ". Please modify your request.";
+        addToast(specificError, 'error');
       }
 
       setDestinations(prev => prev.map(adv => 
-        adv.id === newAdventure.id ? { ...adv, loading: false, error: "Failed to generate image. " + (error.message || "") } : adv
+        adv.id === newAdventure.id ? { ...adv, loading: false, error: specificError } : adv
       ));
     } finally {
       clearInterval(progressInterval);
@@ -998,7 +1002,7 @@ export default function App() {
         const blob = await response.blob();
         const file = new File([blob], 'pet-passport.png', { type: 'image/png' });
         await navigator.share({
-          title: `PawPassport: ${title}`,
+          title: `PatiPasaport: ${title}`,
           text: `Check out my pet's adventure to ${title}!`,
           files: [file]
         });
@@ -1030,38 +1034,63 @@ export default function App() {
     localStorage.removeItem('pawpassport-destinations');
   };
 
+  const [isKeyLoading, setIsKeyLoading] = useState(false);
   const handleOpenSelectKey = async () => {
+    setIsKeyLoading(true);
+    try {
     await (window as any).aistudio?.openSelectKey();
     setShowKeyDialog(false);
+    } finally {
+      setIsKeyLoading(false);
+    }
   };
 
   const characterCount = subjects.filter(s => s.type === 'character').length;
   const objectCount = subjects.filter(s => s.type === 'object').length;
 
-  if (!hasStarted) {
-    return (
-      <div className="relative min-h-screen bg-black text-[#FAFAFA] font-sans overflow-x-hidden">
-        <audio ref={audioRef} loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/theme_01.mp3" />
+  
+  return (
+    <>
+      <audio ref={audioRef} loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/theme_01.mp3" />
+      <div className="fixed bottom-4 left-4 z-[999] flex items-center gap-3 bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10 shadow-lg hover:shadow-xl transition-all">
+        <button onClick={toggleMusic} className="text-white hover:text-[#D4AF37] transition focus:outline-none cursor-pointer">
+          {isMusicPlaying ? <Music className="w-5 h-5"/> : <VolumeX className="w-5 h-5" />}
+        </button>
+        <input 
+          type="range" 
+          min="0" max="1" step="0.01" 
+          value={volume} 
+          onChange={(e) => setVolume(parseFloat(e.target.value))}
+          className="w-20 accent-[#D4AF37]"
+        />
+      </div>
+
+      {!hasStarted ? (
+        <div className="relative min-h-screen bg-gray-50 text-gray-900 dark:bg-black dark:text-[#FAFAFA] font-sans overflow-x-hidden transition-colors">
+        
         
         {/* Background glow effects */}
-        <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none atmosphere z-0"></div>
+        <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none atmosphere z-0 opacity-50 dark:opacity-100 mix-blend-multiply dark:mix-blend-normal"></div>
 
         <nav className="relative z-20 flex justify-between items-center py-6 px-4 md:px-8 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
              <Plane className="w-6 h-6 text-[#D4AF37]" />
-             <span className="font-display text-xl tracking-wider uppercase text-white/90">PawPassport</span>
+             <span className="font-display text-xl tracking-wider uppercase text-gray-900 dark:text-gray-100">PatiPasaport</span>
+             {!hasStarted && (
+               <button onClick={() => setShowAboutModal(true)} className="ml-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:text-[#D4AF37] transition-colors border border-black/10 dark:border-white/10 rounded-full px-3 py-1">About</button>
+             )}
           </div>
           <div className="flex items-center gap-4">
-             <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
+             <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-full p-1 border border-black/10 dark:border-white/10">
                <button 
                  onClick={() => setLang('tr')} 
-                 className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${lang === 'tr' ? 'bg-[#D4AF37] text-black' : 'text-white/50 hover:text-white'}`}
+                 className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${lang === 'tr' ? 'bg-[#D4AF37] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white'}`}
                >
                  TR
                </button>
                <button 
                  onClick={() => setLang('en')} 
-                 className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${lang === 'en' ? 'bg-[#D4AF37] text-black' : 'text-white/50 hover:text-white'}`}
+                 className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${lang === 'en' ? 'bg-[#D4AF37] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white'}`}
                >
                  EN
                </button>
@@ -1071,14 +1100,14 @@ export default function App() {
                   {t.enterStudio}
                 </button>
             ) : (
-               <button onClick={handleLogin} className="nav-pill hover:bg-white/5 cursor-pointer transition text-white">{t.signIn}</button>
+               <button onClick={handleLogin} className="nav-pill hover:bg-black/5 dark:bg-white/5 cursor-pointer transition text-gray-900 dark:text-white">{t.signIn}</button>
             )}
           </div>
         </nav>
 
         <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-20 pb-32">
            <div className="text-center max-w-4xl mx-auto mb-32">
-             <motion.div initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8">
+             <motion.div initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 backdrop-blur-md mb-8">
                <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse"></span>
                <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37]">{t.poweredBy}</span>
              </motion.div>
@@ -1091,7 +1120,7 @@ export default function App() {
              </motion.h1>
              <motion.p
                 initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} transition={{delay:0.2}}
-                className="text-lg md:text-xl font-sans text-white/50 max-w-2xl mx-auto font-light leading-relaxed mb-12"
+                className="text-lg md:text-xl font-sans text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-normal leading-relaxed mb-12"
              >
                {t.subtitle}
              </motion.p>
@@ -1099,7 +1128,7 @@ export default function App() {
              <motion.div initial={{opacity:0, y:20}} animate={{opacity:1,y:0}} transition={{delay:0.3}} className="flex flex-col sm:flex-row items-center justify-center gap-4">
                <button 
                 onClick={() => setHasStarted(true)}
-                className="group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-white text-black font-display font-medium text-lg tracking-wider rounded-full hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                className="group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-display font-medium text-lg tracking-wider rounded-full hover:scale-105 transition-all duration-300 shadow-xl dark:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
                >
                  <span>{t.startBtn}</span>
                  <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
@@ -1108,20 +1137,20 @@ export default function App() {
            </div>
 
            {/* Features / Demo Gallery */}
-           <div className="grid md:grid-cols-2 gap-16 items-center mb-32 border-t border-white/10 pt-24">
+           <div className="grid md:grid-cols-2 gap-16 items-center mb-32 border-t border-black/10 dark:border-white/10 pt-24">
              <div className="space-y-12">
-               <h2 className="text-4xl md:text-5xl font-display font-light tracking-tight text-white mb-8">{t.howItWorks.split(' ')[0]} <span className="italic text-[#D4AF37]" style={{ fontFamily: 'Georgia, serif' }}>{t.howItWorks.split(' ').slice(1).join(' ')}</span></h2>
+               <h2 className="text-4xl md:text-5xl font-display font-light tracking-tight text-gray-900 dark:text-white mb-8">{t.howItWorks.split(' ')[0]} <span className="italic text-[#D4AF37]" style={{ fontFamily: 'Georgia, serif' }}>{t.howItWorks.split(' ').slice(1).join(' ')}</span></h2>
                <div className="space-y-8">
                  {[
                    { step: '01', title: t.step1, desc: t.step1Desc },
                    { step: '02', title: t.step2, desc: t.step2Desc },
                    { step: '03', title: t.step3, desc: t.step3Desc }
                  ].map((item) => (
-                   <div key={item.step} className="flex gap-6 border-b border-white/10 pb-8 group">
-                     <span className="font-mono text-2xl text-white/30 group-hover:text-[#D4AF37] transition-colors">{item.step}</span>
+                   <div key={item.step} className="flex gap-6 border-b border-black/10 dark:border-white/10 pb-8 group">
+                     <span className="font-mono text-2xl text-gray-500 dark:text-gray-400 group-hover:text-[#D4AF37] transition-colors">{item.step}</span>
                      <div>
-                       <h3 className="text-xl font-display uppercase tracking-wider mb-2 text-white/90">{item.title}</h3>
-                       <p className="font-sans text-white/50 leading-relaxed font-light">{item.desc}</p>
+                       <h3 className="text-xl font-display uppercase tracking-wider mb-2 text-gray-900 dark:text-gray-100">{item.title}</h3>
+                       <p className="font-sans text-gray-600 dark:text-gray-300 leading-relaxed font-normal">{item.desc}</p>
                      </div>
                    </div>
                  ))}
@@ -1136,13 +1165,13 @@ export default function App() {
                      whileInView={{opacity:1,y:0}}
                      viewport={{once:true}}
                      transition={{delay: idx * 0.1}}
-                     className={`rounded-2xl overflow-hidden border border-white/10 premium-frame ${idx % 2 !== 0 ? 'mt-12' : ''}`}
+                     className={`rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 premium-frame ${idx % 2 !== 0 ? 'mt-12' : ''}`}
                      style={{ aspectRatio: img.aspect_ratio.replace(':', '/') }}
                    >
                      <div className="premium-frame-content relative group">
                         <img src={img.imageUrl} alt={img.location} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                           <p className="font-display text-lg text-white">{img.location}</p>
+                           <p className="font-display text-lg text-gray-900 dark:text-white">{img.location}</p>
                            <p className="font-sans text-xs text-[#D4AF37] opacity-80">{img.template_description}</p>
                         </div>
                      </div>
@@ -1163,17 +1192,17 @@ export default function App() {
                    <Plane className="w-8 h-8 text-[#D4AF37]" />
                  </div>
                  
-                 <h2 className="text-5xl md:text-6xl font-display font-light mb-6 text-white tracking-tight">
+                 <h2 className="text-5xl md:text-6xl font-display font-light mb-6 text-gray-900 dark:text-white tracking-tight">
                     {t.journey.split(' ')[0]} {t.journey.split(' ')[1]} <span className="italic text-[#D4AF37]" style={{ fontFamily: 'Georgia, serif' }}>{t.journey.split(' ').slice(2).join(' ')}</span>
                  </h2>
                  
-                 <p className="font-sans text-lg text-white/50 mb-12 font-light max-w-lg leading-relaxed">
+                 <p className="font-sans text-lg text-gray-600 dark:text-gray-300 mb-12 font-normal max-w-lg leading-relaxed">
                     {t.join}
                  </p>
                  
                  <button 
                    onClick={() => setHasStarted(true)}
-                   className="group relative inline-flex items-center justify-center px-10 py-5 font-display text-lg tracking-widest uppercase overflow-hidden rounded-full bg-white text-black hover:bg-[#FAFAFA] transition-all hover:scale-105 active:scale-95 duration-300 shadow-[0_0_30px_rgba(255,255,255,0.15)] focus:outline-none focus:ring-4 focus:ring-white/20"
+                   className="group relative inline-flex items-center justify-center px-10 py-5 font-display text-lg tracking-widest uppercase overflow-hidden rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-[#FAFAFA] transition-all hover:scale-105 active:scale-95 duration-300 shadow-xl dark:shadow-[0_0_30px_rgba(255,255,255,0.15)] focus:outline-none focus:ring-4 focus:ring-white/20"
                  >
                    <span className="mr-3 font-medium">{t.getStarted}</span>
                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -1188,29 +1217,26 @@ export default function App() {
            </div>
         </main>
       </div>
-    );
-  }
-
-  return (
-    <>
+      ) : (
+        <>
       <div className="absolute top-4 right-4 z-50">
         {currentUser ? (
-          <div className="flex items-center gap-3 bg-black/50 border border-white/10 rounded-full py-1.5 px-2 pr-4 shadow-lg backdrop-blur-sm">
-            <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-black font-bold uppercase overflow-hidden">
+          <div className="flex items-center gap-3 bg-black/50 border border-black/10 dark:border-white/10 rounded-full py-1.5 px-2 pr-4 shadow-lg backdrop-blur-sm">
+            <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-gray-900 dark:text-white font-bold uppercase overflow-hidden">
               {currentUser.photoURL ? <img src={currentUser.photoURL} alt="Profile" className="w-full h-full object-cover" /> : currentUser.email?.[0] || 'U'}
             </div>
             <div className="hidden sm:block min-w-0">
-              <div className="text-sm font-bold text-white truncate max-w-[120px]">{currentUser.displayName || currentUser.email?.split('@')[0]}</div>
+              <div className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-[120px]">{currentUser.displayName || currentUser.email?.split('@')[0]}</div>
             </div>
             <button
-              onClick={() => setShowProfileDialog(true)}
-              className="ml-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors"
+              onClick={() => setShowProfileModal(true)}
+              className="ml-2 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white transition-colors"
             >
               {t.editProfile}
             </button>
             <button
               onClick={handleLogout}
-              className="ml-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-red-400 transition-colors"
+              className="ml-2 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-red-400 transition-colors"
             >
               {t.signOut}
             </button>
@@ -1218,7 +1244,7 @@ export default function App() {
         ) : (
           <button
             onClick={handleLogin}
-            className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-black border border-[#D4AF37] rounded-full py-2 px-4 shadow-lg font-bold transition-colors cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none"
+            className="flex items-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-gray-900 dark:text-white border border-[#D4AF37] rounded-full py-2 px-4 shadow-lg font-bold transition-colors cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none"
           >
             <span>{t.signInToSave}</span>
           </button>
@@ -1245,6 +1271,16 @@ export default function App() {
       />
 
     <div className="max-w-6xl mx-auto pl-4 pr-6 sm:px-8 py-12 relative z-10">
+      <div className="absolute top-6 right-6 sm:right-8 z-50 flex items-center gap-4">
+        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-gray-900 dark:bg-black/5 dark:bg-white/5 transition-colors cursor-pointer text-gray-900 dark:text-white">
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+        {currentUser ? (
+          <button onClick={() => setShowProfileModal(true)} className="p-2 rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-gray-900 dark:bg-black/5 dark:bg-white/5 transition-colors cursor-pointer text-gray-900 dark:text-white">
+             {currentUser.photoURL ? <img src={currentUser.photoURL} alt="profile" className="w-5 h-5 rounded-full object-cover" /> : <UserIcon className="w-5 h-5" />}
+          </button>
+        ) : null}
+      </div>
       {/* Toast Container */}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         <AnimatePresence>
@@ -1254,17 +1290,17 @@ export default function App() {
               initial={{ opacity: 0, x: 20, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.9 }}
-              className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.5)] bg-[#121217] min-w-[280px] sm:min-w-[300px] max-w-[calc(100vw-2rem)]`}
+              className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border border-black/10 dark:border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.5)] bg-white dark:bg-[#121217] min-w-[280px] sm:min-w-[300px] max-w-[calc(100vw-2rem)]`}
             >
               <div className={`p-2 rounded-full ${toast.type === 'error' ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
                 {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
               </div>
-              <div className="flex-1 text-sm font-sans font-medium text-white/90 leading-tight">
+              <div className="flex-1 text-sm font-sans font-medium text-gray-900 dark:text-gray-100 leading-tight">
                 {toast.message}
               </div>
               <button 
                 onClick={() => removeToast(toast.id)}
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer text-white/50 hover:text-white"
+                className="p-1 hover:bg-black/10 dark:bg-white/10 rounded-lg transition-colors cursor-pointer text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1274,34 +1310,34 @@ export default function App() {
       </div>
 
       <header className="text-center mb-16 pt-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 border border-white/10 mb-4 premium-glow">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 mb-4 premium-glow">
           <Plane className="w-6 h-6 text-[#D4AF37]" />
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none font-display text-transparent bg-clip-text bg-gradient-to-br from-[#FAFAFA] to-white/40">
-          PawPassport
+          PatiPasaport
         </h1>
-        <p className="text-lg md:text-xl font-sans font-medium text-white/50 max-w-2xl mx-auto mt-2">
+        <p className="text-lg md:text-xl font-sans font-medium text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mt-2">
           Send your furry friends on a global adventure with Gemini 3.1 Flash Image
         </p>
       </header>
 
       <AnimatePresence>
         {showExportDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-lg">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-[#121217] border border-white/10 rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 relative max-h-[90vh] flex flex-col"
+              className="bg-white dark:bg-[#121217] border border-black/10 dark:border-white/10 rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 relative max-h-[90vh] flex flex-col"
             >
               <button 
                 onClick={() => setShowExportDialog(false)}
-                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-white/50 hover:text-white"
+                className="absolute top-4 right-4 p-2 hover:bg-black/10 dark:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <h2 className="text-3xl font-display text-white mb-6">{t.exportAlbum}</h2>
+              <h2 className="text-3xl font-display text-gray-900 dark:text-white mb-6">{t.exportAlbum}</h2>
               
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
                 <div>
@@ -1310,7 +1346,7 @@ export default function App() {
                     type="text"
                     value={exportName}
                     onChange={(e) => setExportName(e.target.value)}
-                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                    className="w-full bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
                   />
                 </div>
                 
@@ -1318,15 +1354,15 @@ export default function App() {
                   <div className="flex-1">
                     <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Format</label>
                     <div className="flex gap-2">
-                       <button onClick={() => setExportFormat('zip')} className={`flex-1 py-2 rounded-lg font-bold border transition-colors ${exportFormat === 'zip' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>ZIP Archive</button>
-                       <button onClick={() => setExportFormat('pdf')} className={`flex-1 py-2 rounded-lg font-bold border transition-colors ${exportFormat === 'pdf' ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}>PDF Document</button>
+                       <button onClick={() => setExportFormat('zip')} className={`flex-1 py-2 rounded-lg font-bold border transition-colors ${exportFormat === 'zip' ? 'bg-[#D4AF37] text-gray-900 dark:text-white border-[#D4AF37]' : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border-black/10 dark:border-white/10 hover:bg-black/10 dark:bg-white/10'}`}>ZIP Archive</button>
+                       <button onClick={() => setExportFormat('pdf')} className={`flex-1 py-2 rounded-lg font-bold border transition-colors ${exportFormat === 'pdf' ? 'bg-[#D4AF37] text-gray-900 dark:text-white border-[#D4AF37]' : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border-black/10 dark:border-white/10 hover:bg-black/10 dark:bg-white/10'}`}>PDF Document</button>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <input type="checkbox" id="includeDescriptions" checked={exportIncludeDescriptions} onChange={e => setExportIncludeDescriptions(e.target.checked)} className="w-5 h-5 accent-[#D4AF37] rounded" />
-                  <label htmlFor="includeDescriptions" className="text-white/80 font-sans font-medium">Include descriptions</label>
+                  <label htmlFor="includeDescriptions" className="text-gray-800 dark:text-gray-200 font-sans font-medium">Include descriptions</label>
                 </div>
 
                 <div>
@@ -1337,18 +1373,18 @@ export default function App() {
                      {destinations.filter(d => d.imageUrl && !d.loading).map(dest => (
                        <div key={dest.id} onClick={() => setExportSelectedIds(prev => prev.includes(dest.id) ? prev.filter(id => id !== dest.id) : [...prev, dest.id])} className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${exportSelectedIds.includes(dest.id) ? 'border-[#D4AF37]' : 'border-transparent opacity-50 hover:opacity-80'}`}>
                          <img src={dest.imageUrl} alt={dest.prompt} className="w-full h-full object-cover" />
-                         {exportSelectedIds.includes(dest.id) && <div className="absolute top-2 right-2 bg-[#D4AF37] text-black p-1 rounded-full"><Check className="w-3 h-3" /></div>}
+                         {exportSelectedIds.includes(dest.id) && <div className="absolute top-2 right-2 bg-[#D4AF37] text-gray-900 dark:text-white p-1 rounded-full"><Check className="w-3 h-3" /></div>}
                        </div>
                      ))}
                   </div>
                 </div>
               </div>
               
-              <div className="mt-8 pt-4 border-t border-white/10">
+              <div className="mt-8 pt-4 border-t border-black/10 dark:border-white/10">
                 <button
                   onClick={handleExportSubmit}
                   disabled={isExporting || exportSelectedIds.length === 0}
-                  className="w-full flex items-center justify-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-black py-4 rounded-xl font-display font-medium text-xl tracking-wider transition-all disabled:opacity-50 focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none"
+                  className="w-full flex items-center justify-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-gray-900 dark:text-white py-4 rounded-xl font-display font-medium text-xl tracking-wider transition-all disabled:opacity-50 focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none"
                 >
                   {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
                   {isExporting ? `Exporting (${exportProgress}%)` : `Export ${exportSelectedIds.length} Items`}
@@ -1359,9 +1395,63 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      
       <AnimatePresence>
+        {showAboutModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-lg">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="glass-panel rounded-3xl shadow-2xl max-w-lg w-full p-8 relative border border-white/20 bg-white/95 dark:bg-[#121217]/95"
+            >
+              <button 
+                onClick={() => setShowAboutModal(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-600 dark:text-gray-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] mb-4 border border-[#D4AF37]/30">
+                  <Plane className="w-8 h-8" />
+                </div>
+                <h2 className="text-3xl font-display text-gray-900 dark:text-white">PatiPasaport</h2>
+              </div>
+              
+              <div className="space-y-4 font-sans text-gray-600 dark:text-gray-300">
+                <p>
+                  <strong>PatiPasaport</strong> is your ultimate tool to transform everyday photos of your pets (and their favorite objects) into breathtaking travel memories. 
+                </p>
+                <p>
+                  Built to celebrate the adventurers in our lives, even if they never leave the backyard. We use cutting-edge generative AI to place your subjects into fully rendered, beautiful scenes anywhere in the world.
+                </p>
+                <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 rounded-xl mt-6">
+                  <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-[#D4AF37]" /> AI Model Powered</h3>
+                  <p className="text-sm">
+                    PatiPasaport leverages <strong>Gemini 3.1 Flash Image</strong> for generating extremely fast and visually stunning, highly photorealistic composite imagery based on your prompts and uploaded assets.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-x-4 mt-8 flex">
+                <a href="/about" className="flex-1 py-3 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white font-bold rounded-xl text-center border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+                  More About Us
+                </a>
+                <button
+                  onClick={() => setShowAboutModal(false)}
+                  className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-xl hover:opacity-90 transition-opacity flex-1"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+<AnimatePresence>
         {showKeyDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-lg">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1370,7 +1460,7 @@ export default function App() {
             >
               <button 
                 onClick={() => setShowKeyDialog(false)}
-                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-white/50 hover:text-white"
+                className="absolute top-4 right-4 p-2 hover:bg-black/10 dark:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1379,8 +1469,13 @@ export default function App() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] mb-6 border border-[#D4AF37]/30">
                   <Settings className="w-8 h-8" />
                 </div>
-                <h2 className="text-2xl font-display text-white mb-4">API Key Required</h2>
-                <p className="font-sans font-medium text-white/60 mb-6">
+                <h2 className="text-2xl font-display text-gray-900 dark:text-white mb-4">API Key Configuration</h2>
+                {process.env.GEMINI_API_KEY && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-500/10 py-2 px-4 rounded-full w-fit mx-auto mb-4 border border-green-500/20 font-medium">
+                    <Check className="w-4 h-4" /> Default API Key Loaded
+                  </div>
+                )}
+                <p className="font-sans font-medium text-gray-600 dark:text-gray-300 mb-6">
                   To generate Gemini 3.1 Flash Image images, you need to select a paid Gemini API key. 
                   This ensures the best performance for your pet's adventure.
                 </p>
@@ -1389,16 +1484,16 @@ export default function App() {
                   <p className="text-xs font-bold uppercase tracking-widest text-red-400 mb-2 flex items-center gap-2">
                     <AlertCircle className="w-4 h-4" /> Paid Project Required!
                   </p>
-                  <p className="text-sm leading-relaxed text-white/80">
-                    Imagen 3 generation requires a <strong className="text-white font-bold">PAID project</strong>. If your API key uses the free tier, image generation will fail!
+                  <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-200">
+                    Imagen 3 generation requires a <strong className="text-gray-900 dark:text-white font-bold">PAID project</strong>. If your API key uses the free tier, image generation will fail!
                   </p>
-                  <p className="text-sm leading-relaxed text-white/80 mt-2">
+                  <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-200 mt-2">
                     Manage your keys and billing directly here:{' '}
                     <a 
                       href="https://aistudio.google.com/app/apikey" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="underline font-bold text-[#D4AF37] hover:text-white transition-colors block mt-1 break-all"
+                      className="underline font-bold text-[#D4AF37] hover:text-gray-900 dark:text-white transition-colors block mt-1 break-all"
                     >
                       https://aistudio.google.com/app/apikey
                     </a>
@@ -1407,86 +1502,36 @@ export default function App() {
 
                 <button 
                   onClick={handleOpenSelectKey}
-                  className="w-full py-4 px-8 rounded-2xl bg-[#D4AF37] text-black font-display text-xl tracking-wider hover:bg-[#FBBF24] transition-all transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer shadow-[0_0_20px_rgba(212,175,55,0.2)]"
+                  disabled={isKeyLoading}
+                  className="w-full flex items-center justify-center gap-2 py-4 px-8 rounded-2xl bg-[#D4AF37] text-gray-900 dark:text-white font-display text-xl tracking-wider hover:bg-[#FBBF24] transition-all transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer shadow-[0_0_20px_rgba(212,175,55,0.2)] disabled:opacity-50"
                 >
-                  Select API Key
+                  {isKeyLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                  Select Custom API Key
                 </button>
               </div>
             </motion.div>
           </div>
         )}
 
-        {showProfileDialog && currentUser && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-[#121217] border border-white/10 p-6 md:p-8 rounded-3xl max-w-md w-full shadow-2xl relative"
-            >
-              <button 
-                onClick={() => setShowProfileDialog(false)}
-                className="absolute top-4 right-4 p-2 text-white/50 hover:text-white rounded-full transition-colors cursor-pointer"
-                title="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              
-              <h2 className="text-2xl font-display mb-6 text-white text-center">Edit Profile</h2>
-              
-              <form onSubmit={e => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleUpdateProfile(formData.get('displayName') as string, formData.get('photoURL') as string);
-              }} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Display Name</label>
-                  <input
-                    type="text"
-                    name="displayName"
-                    defaultValue={currentUser.displayName || ''}
-                    placeholder="Enter display name"
-                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-2">Profile Image URL</label>
-                  <input
-                    type="url"
-                    name="photoURL"
-                    defaultValue={currentUser.photoURL || ''}
-                    placeholder="https://example.com/avatar.jpg"
-                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
-                  />
-                </div>
-                <button 
-                  type="submit"
-                  className="w-full mt-4 flex items-center justify-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-black py-3 px-4 rounded-xl font-bold transition-all cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none"
-                >
-                  Save Profile
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
+
 
         {sharingDestination && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-lg">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-[#121217] border border-white/10 p-6 md:p-8 rounded-3xl max-w-md w-full shadow-2xl relative"
+              className="bg-white dark:bg-[#121217] border border-black/10 dark:border-white/10 p-6 md:p-8 rounded-3xl max-w-md w-full shadow-2xl relative"
             >
               <button 
                 onClick={() => setSharingDestination(null)}
-                className="absolute top-4 right-4 p-2 text-white/50 hover:text-white rounded-full transition-colors"
+                className="absolute top-4 right-4 p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white rounded-full transition-colors"
                 title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
               
-              <h2 className="text-2xl font-display mb-4 text-white">{t.share}</h2>
+              <h2 className="text-2xl font-display mb-4 text-gray-900 dark:text-white">{t.share}</h2>
               <img src={sharingDestination.imageUrl} alt="Preview" className="w-full h-48 object-cover rounded-xl mb-6 shadow-lg" />
               
               <div className="space-y-3">
@@ -1495,7 +1540,7 @@ export default function App() {
                     const text = encodeURIComponent(`Check out my pet's adventure to ${sharingDestination.prompt}! #pawpassport #petadventures #aigenerated`);
                     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1A91DA] text-white py-3 rounded-xl transition-all font-sans font-bold shadow-lg cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1A91DA] text-gray-900 dark:text-white py-3 rounded-xl transition-all font-sans font-bold shadow-lg cursor-pointer"
                 >
                   {t.shareX}
                 </button>
@@ -1505,7 +1550,7 @@ export default function App() {
                     addToast("Image downloaded! You can now open Instagram and post it.", "success");
                     setSharingDestination(null);
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 hover:opacity-90 text-white py-3 rounded-xl transition-all font-sans font-bold shadow-lg cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 hover:opacity-90 text-gray-900 dark:text-white py-3 rounded-xl transition-all font-sans font-bold shadow-lg cursor-pointer"
                 >
                   Download for Instagram
                 </button>
@@ -1517,7 +1562,7 @@ export default function App() {
                         const blob = await response.blob();
                         const file = new File([blob], 'pawpassport.png', { type: 'image/png' });
                         await navigator.share({
-                          title: `PawPassport: ${sharingDestination.prompt}`,
+                          title: `PatiPasaport: ${sharingDestination.prompt}`,
                           text: `Check out my pet's adventure to ${sharingDestination.prompt}! #pawpassport #petadventures`,
                           files: [file]
                         });
@@ -1528,7 +1573,7 @@ export default function App() {
                       addToast("Native sharing not supported here.", "error");
                     }
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl border border-white/10 transition-all font-sans font-bold shadow-lg cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white py-3 rounded-xl border border-black/10 dark:border-white/10 transition-all font-sans font-bold shadow-lg cursor-pointer"
                 >
                   More Options...
                 </button>
@@ -1543,12 +1588,12 @@ export default function App() {
         <div className="lg:col-span-4 space-y-8">
           {/* Subject Manager */}
           <div 
-            className={`tour-step-upload glass-panel p-6 rounded-3xl shadow-xl transition-all duration-300 ring-2 ${isDragging ? 'ring-[#D4AF37] bg-white/10 scale-105' : 'ring-transparent'}`}
+            className={`tour-step-upload glass-panel p-6 rounded-3xl shadow-xl transition-all duration-300 ring-2 ${isDragging ? 'ring-[#D4AF37] bg-black/10 dark:bg-white/10 scale-105' : 'ring-transparent'}`}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
           >
-            <h2 className="text-2xl font-display mb-4 flex items-center justify-between text-white">
+            <h2 className="text-2xl font-display mb-4 flex items-center justify-between text-gray-900 dark:text-white">
               <span>1. Upload subjects {isDragging && <span className="text-sm ml-2 text-[#D4AF37]">Drop images here</span>}</span>
             </h2>
             <h3 className="mb-4">
@@ -1557,17 +1602,17 @@ export default function App() {
             
             <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {subjects.length === 0 && (
-                <div className="text-center py-8 border border-dashed border-white/10 rounded-2xl bg-black/20">
-                  <Camera className="w-8 h-8 mx-auto mb-2 text-white/30" />
-                  <p className="text-sm font-sans font-medium text-white/40">No subjects added yet</p>
+                <div className="text-center py-8 border border-dashed border-black/10 dark:border-white/10 rounded-2xl bg-black/20">
+                  <Camera className="w-8 h-8 mx-auto mb-2 text-gray-500 dark:text-gray-400" />
+                  <p className="text-sm font-sans font-medium text-white dark:text-black/40 dark:text-white/40">No subjects added yet</p>
                 </div>
               )}
               {subjects.map((s, idx) => (
                 <div key={s.id} className="flex flex-col gap-2 p-3 bg-black/40 rounded-xl border border-white/5 group hover:border-[#D4AF37]/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-12 flex-shrink-0">
-                      <img src={s.url} alt={s.name} className="w-full h-full object-cover rounded-lg border border-white/10" />
-                      <div className="absolute -top-2 -left-2 bg-[#D4AF37] text-black text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                      <img src={s.url} alt={s.name} className="w-full h-full object-cover rounded-lg border border-black/10 dark:border-white/10" />
+                      <div className="absolute -top-2 -left-2 bg-[#D4AF37] text-gray-900 dark:text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
                         img_{idx}
                       </div>
                     </div>
@@ -1577,16 +1622,16 @@ export default function App() {
                         value={s.name}
                         onChange={(e) => updateSubjectName(s.id, e.target.value)}
                         placeholder={s.type === 'character' ? "Pet's name..." : "Specify object type (e.g. Toy Car)..."}
-                        className="w-full bg-transparent text-sm font-bold text-white focus:outline-none border-b border-transparent focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 rounded px-1 transition-all placeholder:text-white/30 placeholder:font-normal"
+                        className="w-full bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:outline-none border-b border-transparent focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 rounded px-1 transition-all placeholder:text-gray-500 dark:text-gray-400 placeholder:font-normal"
                       />
                       <div className="flex items-center gap-2 mt-1">
                         <select 
                           value={s.type} 
                           onChange={(e) => updateSubjectType(s.id, e.target.value as 'character' | 'object')}
-                          className="bg-transparent text-[10px] uppercase tracking-widest text-white/60 focus:outline-none border-b border-white/20 focus:border-[#D4AF37] cursor-pointer outline-none"
+                          className="bg-transparent text-[10px] uppercase tracking-widest text-gray-600 dark:text-gray-300 focus:outline-none border-b border-black/20 dark:border-white/20 focus:border-[#D4AF37] cursor-pointer outline-none"
                         >
-                          <option value="character" className="bg-[#121217]">{t.pet}</option>
-                          <option value="object" className="bg-[#121217]">{t.object}</option>
+                          <option value="character" className="bg-white dark:bg-[#121217]">{t.pet}</option>
+                          <option value="object" className="bg-white dark:bg-[#121217]">{t.object}</option>
                         </select>
                         {s.type === 'object' && (
                           <select 
@@ -1594,11 +1639,11 @@ export default function App() {
                             onChange={(e) => updateSubjectCategory(s.id, e.target.value)}
                             className="bg-transparent text-[10px] uppercase tracking-widest text-[#D4AF37] focus:outline-none border-b border-[#D4AF37]/30 focus:border-[#D4AF37] cursor-pointer outline-none"
                           >
-                            <option value="Toy" className="bg-[#121217]">Toy</option>
-                            <option value="Accessory" className="bg-[#121217]">Accessory</option>
-                            <option value="Food" className="bg-[#121217]">Food</option>
-                            <option value="Prop" className="bg-[#121217]">Prop</option>
-                            <option value="Other" className="bg-[#121217]">Other</option>
+                            <option value="Toy" className="bg-white dark:bg-[#121217]">Toy</option>
+                            <option value="Accessory" className="bg-white dark:bg-[#121217]">Accessory</option>
+                            <option value="Food" className="bg-white dark:bg-[#121217]">Food</option>
+                            <option value="Prop" className="bg-white dark:bg-[#121217]">Prop</option>
+                            <option value="Other" className="bg-white dark:bg-[#121217]">Other</option>
                           </select>
                         )}
                       </div>
@@ -1606,7 +1651,7 @@ export default function App() {
                     <div className="flex flex-col items-center gap-2">
                       <button 
                         onClick={() => toggleSaveSubject(s)}
-                        className={`p-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg focus:opacity-100 focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer ${s.isSaved ? 'text-red-500 hover:bg-red-500/10' : 'text-white/50 hover:bg-white/10 hover:text-white'}`}
+                        className={`p-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg focus:opacity-100 focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer ${s.isSaved ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 hover:text-gray-900 dark:text-white'}`}
                         title={s.isSaved ? "Remove from Profile" : "Save to Profile"}
                       >
                         <Heart className="w-4 h-4" fill={s.isSaved ? "currentColor" : "none"} />
@@ -1631,7 +1676,7 @@ export default function App() {
                   setUploadType('character');
                   fileInputRef.current?.click();
                 }}
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 bg-white/5 font-display text-lg tracking-wider text-white hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 focus:ring-2 focus:ring-white/30 focus:outline-none cursor-pointer"
+                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 font-display text-lg tracking-wider text-gray-900 dark:text-white hover:bg-black/10 dark:bg-white/10 hover:border-black/20 dark:border-white/20 transition-all disabled:opacity-50 focus:ring-2 focus:ring-white/30 focus:outline-none cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> {t.addCh}
               </button>
@@ -1641,17 +1686,17 @@ export default function App() {
                   setUploadType('object');
                   fileInputRef.current?.click();
                 }}
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 bg-white/5 font-display text-lg tracking-wider text-white hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 focus:ring-2 focus:ring-white/30 focus:outline-none cursor-pointer"
+                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 font-display text-lg tracking-wider text-gray-900 dark:text-white hover:bg-black/10 dark:bg-white/10 hover:border-black/20 dark:border-white/20 transition-all disabled:opacity-50 focus:ring-2 focus:ring-white/30 focus:outline-none cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> {t.addObj}
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-white/10">
+            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-black/10 dark:border-white/10">
                <div className="flex justify-between items-center relative">
                  <button 
                    onClick={() => setShowPresetsMenu(!showPresetsMenu)}
-                   className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] hover:text-white transition-colors"
+                   className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] hover:text-gray-900 dark:text-white transition-colors"
                  >
                    {t.loadPreset}
                  </button>
@@ -1667,17 +1712,17 @@ export default function App() {
                       }
                    }}
                    disabled={subjects.length === 0}
-                   className="text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors disabled:opacity-50"
+                   className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white transition-colors disabled:opacity-50"
                  >
                    {t.savePreset}
                  </button>
                  
                </div>
                {showPresetsMenu && subjectPresets.length > 0 && (
-                 <div className="bg-black/50 border border-white/10 rounded-xl p-3 grid gap-2">
+                 <div className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl p-3 grid gap-2">
                     {subjectPresets.map((preset, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-sm p-2 hover:bg-white/5 rounded-lg">
-                        <span className="font-sans font-medium text-white/90">{preset.name}</span>
+                      <div key={idx} className="flex justify-between items-center text-sm p-2 hover:bg-black/5 dark:bg-white/5 rounded-lg">
+                        <span className="font-sans font-medium text-gray-900 dark:text-gray-100">{preset.name}</span>
                         <div className="flex gap-2">
                            <button onClick={() => { setSubjects(preset.subjects); setShowPresetsMenu(false); }} className="text-[#D4AF37] hover:text-[#FBBF24]">{t.load}</button>
                            <button onClick={() => {
@@ -1705,7 +1750,7 @@ export default function App() {
           {/* Configuration */}
           {showAdvanced && (
             <div className="glass-panel p-6 rounded-3xl shadow-xl">
-              <h2 className="text-xl font-display mb-6 flex items-center gap-2 text-white">
+              <h2 className="text-xl font-display mb-6 flex items-center gap-2 text-gray-900 dark:text-white">
                 <Settings className="w-5 h-5 text-[#D4AF37]" />
                 {t.advancedSettings}
               </h2>
@@ -1720,7 +1765,7 @@ export default function App() {
                         <button
                           key={r}
                           onClick={() => setSelectedAspectRatio(r)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${selectedAspectRatio === r ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-white' : 'border-white/10 bg-black/30 text-white/50 hover:bg-white/5 hover:text-white/80'}`}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${selectedAspectRatio === r ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-gray-900 dark:text-white' : 'border-black/10 dark:border-white/10 bg-black/30 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:bg-white/5 hover:text-gray-800 dark:text-gray-200'}`}
                         >
                           <div 
                             className={`border-2 rounded-[2px] ${selectedAspectRatio === r ? 'border-[#D4AF37]' : 'border-white/50'}`}
@@ -1742,16 +1787,16 @@ export default function App() {
                     <select 
                       value={stylePreset}
                       onChange={(e) => setStylePreset(e.target.value)}
-                      className="w-full appearance-none bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white focus:outline-none cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                      className="w-full appearance-none bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
                     >
-                      <option value="" className="bg-[#121217] text-white">None (Auto)</option>
-                      <option value="Photorealistic" className="bg-[#121217] text-white">Photorealistic</option>
-                      <option value="Cinematic" className="bg-[#121217] text-white">Cinematic</option>
-                      <option value="Anime" className="bg-[#121217] text-white">Anime</option>
-                      <option value="Watercolor" className="bg-[#121217] text-white">Watercolor</option>
-                      <option value="3D Cartoon" className="bg-[#121217] text-white">3D Cartoon</option>
+                      <option value="" className="bg-white dark:bg-[#121217] text-gray-900 dark:text-white">None (Auto)</option>
+                      <option value="Photorealistic" className="bg-white dark:bg-[#121217] text-gray-900 dark:text-white">Photorealistic</option>
+                      <option value="Cinematic" className="bg-white dark:bg-[#121217] text-gray-900 dark:text-white">Cinematic</option>
+                      <option value="Anime" className="bg-white dark:bg-[#121217] text-gray-900 dark:text-white">Anime</option>
+                      <option value="Watercolor" className="bg-white dark:bg-[#121217] text-gray-900 dark:text-white">Watercolor</option>
+                      <option value="3D Cartoon" className="bg-white dark:bg-[#121217] text-gray-900 dark:text-white">3D Cartoon</option>
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-white/50" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-600 dark:text-gray-300" />
                   </div>
                 </div>
 
@@ -1762,7 +1807,7 @@ export default function App() {
                     value={negativePrompt}
                     onChange={(e) => setNegativePrompt(e.target.value)}
                     placeholder="e.g. text, watermark, blurry..."
-                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                    className="w-full bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
                   />
                 </div>
 
@@ -1773,7 +1818,7 @@ export default function App() {
                     value={seed}
                     onChange={(e) => setSeed(e.target.value)}
                     placeholder="e.g. 42"
-                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                    className="w-full bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
                   />
                 </div>
 
@@ -1783,11 +1828,11 @@ export default function App() {
                     <select 
                       value={selectedResolution}
                       onChange={(e) => setSelectedResolution(e.target.value)}
-                      className="w-full appearance-none bg-black/50 border border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-white focus:outline-none cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
+                      className="w-full appearance-none bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-3 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none cursor-pointer focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent transition-all"
                     >
-                      {RESOLUTIONS.map(r => <option key={r} value={r} className="bg-[#121217] text-white">{r}</option>)}
+                      {RESOLUTIONS.map(r => <option key={r} value={r} className="bg-white dark:bg-[#121217] text-gray-900 dark:text-white">{r}</option>)}
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-white/50" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-600 dark:text-gray-300" />
                   </div>
                 </div>
               </div>
@@ -1796,7 +1841,7 @@ export default function App() {
 
           <button 
             onClick={handleRestart}
-            className="w-full py-4 px-6 rounded-2xl border border-white/10 font-display text-xl tracking-wider hover:bg-white/10 text-white/70 hover:text-white transition-all flex items-center justify-center gap-2 glass-panel shadow-sm hover:shadow-md focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer"
+            className="w-full py-4 px-6 rounded-2xl border border-black/10 dark:border-white/10 font-display text-xl tracking-wider hover:bg-black/10 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:text-white transition-all flex items-center justify-center gap-2 glass-panel shadow-sm hover:shadow-md focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer"
           >
             <RefreshCw className="w-5 h-5" />
             Reset Adventure
@@ -1808,13 +1853,13 @@ export default function App() {
           <div className="tour-step-destination glass-panel p-6 sm:p-10 rounded-3xl shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-30"></div>
             <div className="flex justify-between items-center mb-8 relative z-10">
-              <h2 className="text-2xl font-display text-white flex items-center gap-3">
+              <h2 className="text-2xl font-display text-gray-900 dark:text-white flex items-center gap-3">
                 <MapPin className="w-6 h-6 text-[#D4AF37]" />
                 2. Plan their Adventure
               </h2>
               <button 
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="tour-step-advanced flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors border-b border-white/10 hover:border-white/50 focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none focus:border-transparent rounded px-1 cursor-pointer pb-1"
+                className="tour-step-advanced flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white transition-colors border-b border-black/10 dark:border-white/10 hover:border-white/50 focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none focus:border-transparent rounded px-1 cursor-pointer pb-1"
               >
                 <Settings className="w-4 h-4" />
                 {showAdvanced ? t.hideAdvancedSettings : t.showAdvancedSettings}
@@ -1829,7 +1874,7 @@ export default function App() {
                   value={currentDestination}
                   onChange={(e) => setCurrentDestination(e.target.value)}
                   placeholder="e.g. The Great Wall of China"
-                  className="w-full bg-transparent border-b border-white/10 py-3 text-2xl text-white focus:outline-none focus:border-[#D4AF37] font-sans font-medium hover:border-white/30 focus:ring-0 placeholder:text-white/20 transition-colors"
+                  className="w-full bg-transparent border-b border-black/10 dark:border-white/10 py-3 text-2xl text-gray-900 dark:text-white focus:outline-none focus:border-[#D4AF37] font-sans font-medium hover:border-white/30 focus:ring-0 placeholder:text-white dark:text-black/20 dark:text-white/20 transition-colors"
                   disabled={isGenerating}
                 />
               </div>
@@ -1845,7 +1890,7 @@ export default function App() {
                     value={currentDescription}
                     onChange={(e) => setCurrentDescription(e.target.value)}
                     placeholder="Describe the scene, lighting, and what the subjects are doing..."
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white min-h-[120px] focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 font-sans font-medium resize-none placeholder:text-white/20 transition-all shadow-inner"
+                    className="w-full bg-black/40 border border-black/10 dark:border-white/10 rounded-2xl p-5 text-gray-900 dark:text-white min-h-[120px] focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 font-sans font-medium resize-none placeholder:text-white dark:text-black/20 dark:text-white/20 transition-all shadow-inner"
                     disabled={isGenerating}
                   />
                 </motion.div>
@@ -1857,7 +1902,7 @@ export default function App() {
                     type="button"
                     onClick={undo}
                     disabled={pastDestinations.length === 0 || isGenerating}
-                    className="bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-gray-900 dark:text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                   >
                     {t.undo}
                   </button>
@@ -1865,7 +1910,7 @@ export default function App() {
                     type="button"
                     onClick={redo}
                     disabled={futureDestinations.length === 0 || isGenerating}
-                    className="bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-xl font-bold text-gray-900 dark:text-white transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                   >
                     {t.redo}
                   </button>
@@ -1873,12 +1918,14 @@ export default function App() {
                 <button 
                   type="submit"
                   disabled={!currentDestination.trim() || subjects.length === 0 || isGenerating}
-                  className="tour-step-generate w-full sm:w-auto bg-[#D4AF37] text-black px-6 sm:px-12 py-4 rounded-2xl font-display text-xl tracking-widest disabled:opacity-50 disabled:grayscale hover:bg-[#FBBF24] hover:shadow-[0_0_30px_rgba(212,175,55,0.3)] transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer"
+                  className="relative overflow-hidden tour-step-generate w-full sm:w-auto bg-[#D4AF37] text-gray-900 dark:text-white px-6 sm:px-12 py-4 rounded-2xl font-display text-xl tracking-widest disabled:opacity-50 disabled:grayscale hover:bg-[#FBBF24] hover:shadow-[0_0_30px_rgba(212,175,55,0.3)] transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer"
                 >
+                  {isGenerating && <div className="absolute inset-y-0 left-0 bg-white/30 dark:bg-black/20 transition-all duration-300 pointer-events-none" style={{ width: `${generateProgress}%` }}></div>}
+                  <div className="relative z-10 flex items-center justify-center gap-3">
                   {isGenerating ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Generating...
+                      Generating... {generateProgress}%
                     </>
                   ) : (
                     <>
@@ -1886,18 +1933,19 @@ export default function App() {
                       {t.generate}
                     </>
                   )}
+                  </div>
                 </button>
               </div>
             </form>
 
-            <div className="tour-step-ai-ideas mt-8 pt-8 border-t border-white/10 relative z-10">
+            <div className="tour-step-ai-ideas mt-8 pt-8 border-t border-black/10 dark:border-white/10 relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-bold uppercase tracking-wider text-[#D4AF37]">Inspiration:</p>
                 <button
                   type="button"
                   onClick={generateSuggestions}
                   disabled={isGeneratingSuggestions || subjects.length === 0}
-                  className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black bg-[#D4AF37] px-3 py-1.5 rounded-full hover:bg-[#FBBF24] transition-colors focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white bg-[#D4AF37] px-3 py-1.5 rounded-full hover:bg-[#FBBF24] transition-colors focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer disabled:opacity-50"
                 >
                   {isGeneratingSuggestions ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                   Generate Ideas
@@ -1914,7 +1962,7 @@ export default function App() {
                              key={idx}
                              type="button"
                              onClick={() => setCurrentDestination(suggestion)}
-                             className="text-left text-xs py-2 px-4 rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:bg-[#D4AF37]/20 text-white transition-all font-sans font-medium focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer"
+                             className="text-left text-xs py-2 px-4 rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:bg-[#D4AF37]/20 text-gray-900 dark:text-white transition-all font-sans font-medium focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer"
                            >
                              "{suggestion}"
                            </button>
@@ -1926,7 +1974,7 @@ export default function App() {
                 <div className="space-y-6">
                   {Object.entries(CATEGORIZED_SUGGESTIONS).map(([category, items]) => (
                     <div key={category}>
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-white/50 mb-3">{category}</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 mb-3">{category}</h4>
                       <div className="flex flex-wrap gap-2">
                         {items.map((suggestion, idx) => {
                           const petName = subjects.find(s => s.type === 'character')?.name || "My pet";
@@ -1936,7 +1984,7 @@ export default function App() {
                               key={idx}
                               type="button"
                               onClick={() => setCurrentDestination(displaySuggestion)}
-                              className="text-left text-xs py-2 px-4 rounded-full border border-white/10 bg-white/5 hover:border-[#D4AF37]/50 hover:bg-white/10 text-white/70 hover:text-white transition-all font-sans font-medium focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer"
+                              className="text-left text-xs py-2 px-4 rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-[#D4AF37]/50 hover:bg-black/10 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:text-white transition-all font-sans font-medium focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer"
                             >
                               "{displaySuggestion}"
                             </button>
@@ -1953,12 +2001,12 @@ export default function App() {
           {destinations.length > 0 && (
             <div className="pt-12">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
-                <h2 className="text-3xl sm:text-4xl font-display text-white">{t.album}</h2>
+                <h2 className="text-3xl sm:text-4xl font-display text-gray-900 dark:text-white">{t.album}</h2>
                 <div className="flex items-center gap-4">
                   {destinations.some(d => d.imageUrl) && (
                     <button 
                       onClick={handleOpenExport}
-                      className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#D4AF37] hover:text-white border-b border-transparent hover:border-white pb-1 transition-all cursor-pointer"
+                      className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#D4AF37] hover:text-gray-900 dark:text-white border-b border-transparent hover:border-white pb-1 transition-all cursor-pointer"
                     >
                       <Download className="w-4 h-4" />
                       {t.exportAlbum}
@@ -1973,69 +2021,70 @@ export default function App() {
                   placeholder="Filter by location..."
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
-                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
+                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
                 />
                 <input
                   type="text"
                   placeholder="Subject name..."
                   value={subjectNameFilter}
                   onChange={(e) => setSubjectNameFilter(e.target.value)}
-                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
+                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
                 />
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value as any)}
-                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="all" className="bg-[#121217]">All Subjects</option>
-                  <option value="character" className="bg-[#121217]">{t.pets}</option>
-                  <option value="object" className="bg-[#121217]">{t.objects}</option>
+                  <option value="all" className="bg-white dark:bg-[#121217]">All Subjects</option>
+                  <option value="character" className="bg-white dark:bg-[#121217]">{t.pets}</option>
+                  <option value="object" className="bg-white dark:bg-[#121217]">{t.objects}</option>
                 </select>
                 <select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value as any)}
-                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="all" className="bg-[#121217]">All Time</option>
-                  <option value="today" className="bg-[#121217]">Today</option>
-                  <option value="week" className="bg-[#121217]">This Week</option>
+                  <option value="all" className="bg-white dark:bg-[#121217]">All Time</option>
+                  <option value="today" className="bg-white dark:bg-[#121217]">Today</option>
+                  <option value="week" className="bg-white dark:bg-[#121217]">This Week</option>
                 </select>
                 <select
                   value={historyViewMode}
                   onChange={(e) => setHistoryViewMode(e.target.value as any)}
-                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="all" className="bg-[#121217]">Full History</option>
-                  <option value="favorites" className="bg-[#121217]">Favorites Only</option>
+                  <option value="all" className="bg-white dark:bg-[#121217]">Full History</option>
+                  <option value="favorites" className="bg-white dark:bg-[#121217]">Favorites Only</option>
                 </select>
                 <select
                   value={historySortOrder}
                   onChange={(e) => setHistorySortOrder(e.target.value as any)}
-                  className="bg-black/50 border border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="newest" className="bg-[#121217]">Newest First</option>
-                  <option value="oldest" className="bg-[#121217]">Oldest First</option>
+                  <option value="newest" className="bg-white dark:bg-[#121217]">Newest First</option>
+                  <option value="oldest" className="bg-white dark:bg-[#121217]">Oldest First</option>
                 </select>
               </div>
 
               <div className="grid md:grid-cols-2 gap-8">
                 {filteredDestinations.map((dest) => (
                   <div key={dest.id} className="premium-frame cursor-default group">
-                    <div className="premium-frame-content p-4 min-w-0 overflow-hidden flex flex-col h-full bg-[#121217]">
+                    <div className="premium-frame-content p-4 min-w-0 overflow-hidden flex flex-col h-full bg-white dark:bg-[#121217]">
                       <div 
                         className="bg-black/60 rounded-xl border border-white/5 overflow-hidden relative flex items-center justify-center mb-5 w-full shadow-inner"
                         style={{ aspectRatio: dest.aspectRatio.replace(':', '/') }}
                       >
                         {dest.loading ? (
-                          <div className="text-center p-4 sm:p-8 flex flex-col items-center justify-center w-full h-full text-white">
+                          <div className="absolute inset-0 bg-gray-200 dark:bg-black/40 animate-pulse rounded-xl flex flex-col items-center justify-center p-6 overflow-hidden">
+                            <div className="absolute inset-y-0 left-0 w-1/2 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/5 dark:via-white/5 to-transparent skew-x-[-20deg]" />
                             <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin mb-4 text-[#D4AF37] flex-shrink-0" />
-                            <p className="font-sans font-medium text-sm sm:text-base text-white/50 break-words w-full line-clamp-3 mb-2">
+                            <p className="font-sans font-medium text-sm sm:text-base text-gray-600 dark:text-gray-300 break-words text-center w-full max-w-[80%] line-clamp-3 mb-2 z-10 relative">
                               Generating snap of {dest.prompt}
                             </p>
-                            <div className="w-full bg-white/10 rounded-full h-2 mt-2 overflow-hidden shadow-inner flex items-center justify-start border border-white/5">
-                              <div className="bg-[#D4AF37] h-2 transition-all duration-300" style={{ width: `${generateProgress}%` }}></div>
+                            <div className="w-3/4 bg-gray-300 dark:bg-black/10 dark:bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden shadow-inner flex items-center justify-start border border-black/5 dark:border-white/5 z-10 relative">
+                              <div className="bg-[#D4AF37] h-full transition-all duration-300" style={{ width: `${generateProgress}%` }}></div>
                             </div>
-                            <span className="text-xs text-[#D4AF37] mt-1 font-mono">{generateProgress}%</span>
+                            <span className="text-xs text-[#D4AF37] mt-2 font-mono z-10 relative">{generateProgress}%</span>
                           </div>
                         ) : dest.error ? (
                           <div className="text-center text-red-400 px-6 py-8">
@@ -2048,7 +2097,7 @@ export default function App() {
                               <img 
                                 src={dest.imageUrl} 
                                 alt={dest.prompt}
-                                className="w-full h-full object-cover rounded-xl transition-transform duration-700 hover:scale-[1.03] opacity-90 group-hover:opacity-100"
+                                className="w-full h-full object-cover rounded-xl transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
                               />
                             </div>
                             <div className="absolute -bottom-2 -right-4 w-28 h-28 opacity-40 mix-blend-screen pointer-events-none transform -rotate-12 group-hover:-rotate-6 transition-transform duration-500 z-20">
@@ -2064,7 +2113,7 @@ export default function App() {
                         ) : null}
                       </div>
                       <div className="px-2 min-w-0 flex-1">
-                        <h3 className="font-display text-xl tracking-wider text-white/90 break-words">{dest.prompt}</h3>
+                        <h3 className="font-display text-xl tracking-wider text-gray-900 dark:text-gray-100 break-words">{dest.prompt}</h3>
                         {dest.description && (
                           <p className="font-sans font-medium text-sm text-[#D4AF37]/80 line-clamp-2 mt-2 break-words">
                             "{dest.description}"
@@ -2077,19 +2126,19 @@ export default function App() {
                               onChange={(e) => {
                                 setDestinations(prev => prev.map(d => d.id === dest.id ? {...d, filter: e.target.value} : d));
                               }}
-                              className="bg-black/50 border border-white/10 rounded-md py-1 px-2 text-xs font-sans text-white focus:outline-none"
+                              className="bg-black/50 border border-black/10 dark:border-white/10 rounded-md py-1 px-2 text-xs font-sans text-gray-900 dark:text-white focus:outline-none"
                             >
                               <option value="none">No Filter</option>
-                              <option value="sepia">Sepia</option>
-                              <option value="grayscale">B&W</option>
                               <option value="vintage">Vintage</option>
+                              <option value="retro">Retro</option>
+                              <option value="grayscale">Black and White</option>
                             </select>
                             <select 
                               value={dest.animation || 'none'}
                               onChange={(e) => {
                                 setDestinations(prev => prev.map(d => d.id === dest.id ? {...d, animation: e.target.value} : d));
                               }}
-                              className="bg-black/50 border border-white/10 rounded-md py-1 px-2 text-xs font-sans text-white focus:outline-none"
+                              className="bg-black/50 border border-black/10 dark:border-white/10 rounded-md py-1 px-2 text-xs font-sans text-gray-900 dark:text-white focus:outline-none"
                             >
                               <option value="none">Static</option>
                               <option value="parallax">Parallax</option>
@@ -2098,35 +2147,35 @@ export default function App() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between px-2">
+                      <div className="mt-5 pt-4 border-t border-black/10 dark:border-white/10 flex items-center justify-between px-2">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37]">Gemini 3.1 Flash Image</span>
-                          <span className="text-[10px] font-mono text-white/40">{new Date(parseInt(dest.id)).toLocaleString()}</span>
+                          <span className="text-[10px] font-mono text-white dark:text-black/40 dark:text-white/40">{new Date(parseInt(dest.id)).toLocaleString()}</span>
                         </div>
                         {dest.imageUrl && (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => toggleFavoriteDestination(dest)}
-                              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 ${dest.isFavorite ? 'text-red-500 hover:bg-red-500/10' : 'text-white/50 hover:bg-white/10 hover:text-white'}`}
+                              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 ${dest.isFavorite ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 hover:text-gray-900 dark:text-white'}`}
                               title={dest.isFavorite ? "Remove Favorite" : "Save as Favorite"}
                             >
                               <Heart className="w-4 h-4" fill={dest.isFavorite ? "currentColor" : "none"} />
                             </button>
                             <div className="relative group">
                               <button
-                                className="p-2 text-white/50 hover:text-[#D4AF37] hover:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                                className="p-2 text-gray-600 dark:text-gray-300 hover:text-[#D4AF37] hover:bg-black/10 dark:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                                 title="Download Image"
                               >
                                 <Download className="w-4 h-4" />
                               </button>
-                              <div className="absolute bottom-full mb-2 right-0 hidden group-hover:flex flex-col gap-1 bg-[#121217] border border-white/10 rounded-lg shadow-xl p-1 z-50">
-                                <button onClick={() => handleDownloadImage(dest.imageUrl!, `pet-passport-${dest.id}`, 'png')} className="px-3 py-1.5 text-xs text-white hover:bg-white/10 rounded text-left w-full whitespace-nowrap">PNG</button>
-                                <button onClick={() => handleDownloadImage(dest.imageUrl!, `pet-passport-${dest.id}`, 'jpeg')} className="px-3 py-1.5 text-xs text-white hover:bg-white/10 rounded text-left w-full whitespace-nowrap">JPEG</button>
+                              <div className="absolute bottom-full mb-2 right-0 hidden group-hover:flex flex-col gap-1 bg-white dark:bg-[#121217] border border-black/10 dark:border-white/10 rounded-lg shadow-xl p-1 z-50">
+                                <button onClick={() => handleDownloadImage(dest.imageUrl!, `pet-passport-${dest.id}`, 'png')} className="px-3 py-1.5 text-xs text-gray-900 dark:text-white hover:bg-black/10 dark:bg-white/10 rounded text-left w-full whitespace-nowrap">PNG</button>
+                                <button onClick={() => handleDownloadImage(dest.imageUrl!, `pet-passport-${dest.id}`, 'jpeg')} className="px-3 py-1.5 text-xs text-gray-900 dark:text-white hover:bg-black/10 dark:bg-white/10 rounded text-left w-full whitespace-nowrap">JPEG</button>
                               </div>
                             </div>
                             <button
                               onClick={() => setSharingDestination(dest)}
-                              className="p-2 text-white/50 hover:text-[#D4AF37] hover:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                              className="p-2 text-gray-600 dark:text-gray-300 hover:text-[#D4AF37] hover:bg-black/10 dark:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                               title="Share Image"
                             >
                               <Share2 className="w-4 h-4" />
@@ -2143,6 +2192,8 @@ export default function App() {
         </div>
       </div>
     </div>
+    </>
+      )}
     </>
   );
 }
