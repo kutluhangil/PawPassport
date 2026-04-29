@@ -1963,7 +1963,7 @@ export default function App() {
               {dynamicSuggestions.length > 0 ? (
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-3">AI Suggestions</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-3">{t.aiSuggestions}</h4>
                     <div className="flex flex-wrap gap-2">
                        {dynamicSuggestions.map((suggestion, idx) => (
                            <button
@@ -1980,19 +1980,24 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {Object.entries(CATEGORIZED_SUGGESTIONS).map(([category, items]) => (
-                    <div key={category}>
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 mb-3">{category}</h4>
+                  {(Object.entries(CATEGORIZED_SUGGESTION_KEYS) as [string, readonly string[]][]).map(([catKey, slugs]) => (
+                    <div key={catKey}>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300 mb-3">
+                        {t[catKey as keyof typeof t] as string}
+                      </h4>
                       <div className="flex flex-wrap gap-2">
-                        {items.map((suggestion, idx) => {
-                          const petName = subjects.find(s => s.type === 'character')?.name || "My pet";
-                          const displaySuggestion = suggestion.replace("My pet", petName);
+                        {slugs.map((slug) => {
+                          const raw = (t[slug as keyof typeof t] as string) || slug;
+                          const petName = subjects.find(s => s.type === 'character')?.name;
+                          const displaySuggestion = petName
+                            ? raw.replace(/Evcil hayvanım|My pet/g, petName)
+                            : raw;
                           return (
                             <button
-                              key={idx}
+                              key={slug}
                               type="button"
                               onClick={() => setCurrentDestination(displaySuggestion)}
-                              className="text-left text-xs py-2 px-4 rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-[#D4AF37]/50 hover:bg-black/10 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:text-white transition-all font-sans font-medium focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer"
+                              className="text-left text-xs py-2 px-4 rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/5 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:text-white transition-all font-sans font-medium focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer"
                             >
                               "{displaySuggestion}"
                             </button>
