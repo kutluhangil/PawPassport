@@ -7,7 +7,28 @@
   --color-premium-dark: #070709;
   --color-premium-card: #121217;
   --color-premium-border: rgba(255, 255, 255, 0.08);
-  --color-premium-accent: #D4AF37; /* Soft Gold */
+  --color-premium-accent: #D4AF37;
+  /* Light mode tokens */
+  --color-light-bg: #F8F6F1;
+  --color-light-card: #FFFFFF;
+  --color-light-border: rgba(0, 0, 0, 0.08);
+  --color-light-text: #1A1A1A;
+  --color-light-muted: #6B7280;
+}
+
+/* ========================
+   BASE / MOBILE-FIRST
+======================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 15px;
+}
+
+@media (min-width: 640px) {
+  html { font-size: 16px; }
 }
 
 body {
@@ -17,10 +38,19 @@ body {
   position: relative;
   z-index: 0;
   background-attachment: fixed;
+  overflow-x: hidden;
+  /* Light mode default */
+  background-color: var(--color-light-bg);
+  color: var(--color-light-text);
 }
 
+/* ========================
+   DARK MODE BODY
+======================== */
 .dark body {
   background-image: radial-gradient(circle at 50% 0%, rgba(20, 20, 30, 0.8) 0%, var(--color-premium-dark) 70%);
+  background-color: var(--color-premium-dark);
+  color: #FAFAFA;
 }
 
 h1, h2, h3, h4, .font-display {
@@ -28,14 +58,38 @@ h1, h2, h3, h4, .font-display {
   letter-spacing: -0.01em;
 }
 
-/* Elegant Glowing Card Framework */
+/* ========================
+   GLASS PANEL — LIGHT + DARK
+======================== */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+.dark .glass-panel {
+  background: rgba(18, 18, 23, 0.75);
+  border: 1px solid var(--color-premium-border);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* ========================
+   PREMIUM FRAME — LIGHT + DARK
+======================== */
 .premium-frame {
   position: relative;
   border-radius: 1.5rem;
-  padding: 1px; /* very thin elegant border */
+  padding: 1px;
   overflow: hidden;
-  background: var(--color-premium-border);
+  background: rgba(0,0,0,0.08);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  box-shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.15);
+}
+
+.dark .premium-frame {
+  background: var(--color-premium-border);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
@@ -46,7 +100,6 @@ h1, h2, h3, h4, .font-display {
   left: -50%;
   width: 200%;
   height: 200%;
-  /* Elegant slow moving gradient: Soft Gold & Deep Blue */
   background: conic-gradient(
     transparent, transparent, transparent, rgba(212, 175, 55, 0.3), rgba(255, 255, 255, 0.1), transparent, transparent
   );
@@ -57,7 +110,11 @@ h1, h2, h3, h4, .font-display {
 }
 
 .premium-frame:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.2), 0 0 16px rgba(212, 175, 55, 0.12);
+}
+
+.dark .premium-frame:hover {
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.15);
 }
 
@@ -68,11 +125,15 @@ h1, h2, h3, h4, .font-display {
 .premium-frame-content {
   position: relative;
   z-index: 1;
-  background-color: var(--color-premium-card);
+  background-color: var(--color-light-card);
   border-radius: calc(1.5rem - 1px);
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.dark .premium-frame-content {
+  background-color: var(--color-premium-card);
 }
 
 @keyframes elegant-spin {
@@ -80,77 +141,141 @@ h1, h2, h3, h4, .font-display {
   to { transform: rotate(360deg); }
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* ========================
+   SCROLLBAR — LIGHT + DARK
+======================== */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.15);
   border-radius: 20px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.glass-panel {
-  background: rgba(18, 18, 23, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--color-premium-border);
-}
-
+/* ========================
+   ATMOSPHERE (landing page glow)
+======================== */
 .atmosphere {
   background:
     radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15) 0%, transparent 60%),
-    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(0, 0, 0, 0.03) 0%, transparent 50%);
   filter: blur(40px);
   opacity: 0.8;
 }
 
+.dark .atmosphere {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+}
+
+/* ========================
+   NAV PILL
+======================== */
 .nav-pill {
-  border: 1px solid var(--color-premium-border);
+  border: 1px solid rgba(0,0,0,0.1);
   border-radius: 100px;
-  padding: 8px 20px;
+  padding: 7px 18px;
   font-size: 13px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: transparent;
+  transition: all 0.2s;
 }
 
-.filter-sepia img { filter: sepia(100%); }
-.filter-grayscale img { filter: grayscale(100%); }
-.filter-vintage img { filter: sepia(50%) contrast(150%) saturate(150%); }
-.filter-retro img { filter: contrast(120%) saturate(80%) sepia(20%) hue-rotate(-15deg); }
+.dark .nav-pill {
+  border-color: var(--color-premium-border);
+}
 
+/* ========================
+   PREMIUM GLOW
+======================== */
+.premium-glow {
+  box-shadow: 0 0 0 1px rgba(212,175,55,0.2), 0 0 20px rgba(212,175,55,0.1);
+}
+
+/* ========================
+   FILTERS
+======================== */
+.filter-sepia img     { filter: sepia(100%); }
+.filter-grayscale img { filter: grayscale(100%); }
+.filter-vintage img   { filter: sepia(50%) contrast(150%) saturate(150%); }
+.filter-retro img     { filter: contrast(120%) saturate(80%) sepia(20%) hue-rotate(-15deg); }
+
+/* ========================
+   ANIMATIONS
+======================== */
 @keyframes gentle-parallax {
-  0% { transform: scale(1.05) translate(0, 0); }
-  25% { transform: scale(1.05) translate(-1%, 1%); }
-  50% { transform: scale(1.05) translate(1%, -1%); }
-  75% { transform: scale(1.05) translate(1%, 1%); }
+  0%   { transform: scale(1.05) translate(0, 0); }
+  25%  { transform: scale(1.05) translate(-1%, 1%); }
+  50%  { transform: scale(1.05) translate(1%, -1%); }
+  75%  { transform: scale(1.05) translate(1%, 1%); }
   100% { transform: scale(1.05) translate(0, 0); }
 }
-
 .animate-parallax img {
   animation: gentle-parallax 20s infinite ease-in-out;
 }
 
 @keyframes gentle-shimmer {
-  0% { filter: contrast(1) brightness(1); }
-  50% { filter: contrast(1.1) brightness(1.15); }
+  0%   { filter: contrast(1) brightness(1); }
+  50%  { filter: contrast(1.1) brightness(1.15); }
   100% { filter: contrast(1) brightness(1); }
 }
-
 .animate-shimmer img {
   animation: gentle-shimmer 4s infinite ease-in-out;
 }
 
 @keyframes shimmer {
-  100% {
-    transform: translateX(200%);
-  }
+  100% { transform: translateX(200%); }
 }
 
+/* ========================
+   LIGHT MODE OVERRIDES — Studio inputs & selects
+======================== */
+/* Make sure select options readable in light mode */
+select option {
+  background-color: #ffffff;
+  color: #1A1A1A;
+}
+.dark select option {
+  background-color: #121217;
+  color: #FAFAFA;
+}
 
+/* Input autofill fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px white inset;
+  -webkit-text-fill-color: #1A1A1A;
+}
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px #121217 inset;
+  -webkit-text-fill-color: #FAFAFA;
+}
+
+/* ========================
+   MOBILE TOUCH IMPROVEMENTS
+======================== */
+button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Ensure minimum tap target sizes on mobile */
+@media (max-width: 640px) {
+  button, [role="button"] {
+    min-height: 40px;
+  }
+}

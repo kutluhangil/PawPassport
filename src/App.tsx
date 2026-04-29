@@ -32,7 +32,8 @@ import {
   Sun,
   Moon,
   Crop,
-  User as UserIcon
+  User as UserIcon,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Joyride, STATUS, Step } from 'react-joyride';
@@ -151,29 +152,12 @@ const ASPECT_RATIOS = [
 
 const RESOLUTIONS = ["512px", "1K", "2K", "4K"];
 
-const CATEGORIZED_SUGGESTIONS = {
-  "Adventure": [
-    "My pet hiking the Inca Trail to Machu Picchu.",
-    "My pet surfing the giant waves in Nazaré, Portugal.",
-    "My pet hot air ballooning over Cappadocia, Turkey.",
-    "My pet riding a gondola in Venice, Italy."
-  ],
-  "Historical": [
-    "My pet exploring the ruins of the Colosseum in Rome.",
-    "My pet sitting grandly in front of the Taj Mahal.",
-    "My pet walking along the Great Wall of China.",
-    "My pet discovering the ancient pyramids of Giza."
-  ],
-  "Sci-Fi & Space": [
-    "My pet walking on the surface of Mars in a tiny spacesuit.",
-    "My pet driving a futuristic flying car in a cyberpunk city.",
-    "My pet floating in zero gravity aboard the International Space Station."
-  ],
-  "Chill Vibes": [
-    "My pet relaxing in a hammock on a pristine beach in the Maldives.",
-    "My pet enjoying a pastry at a quaint cafe in Paris.",
-    "My pet meditating in a zen garden in Kyoto."
-  ]
+// Suggestion keys by category — translated at render time via t.sug_* keys
+const CATEGORIZED_SUGGESTION_KEYS = {
+  catAdventure: ['sug_inca', 'sug_nazare', 'sug_cappadocia', 'sug_venice'] as const,
+  catHistorical: ['sug_colosseum', 'sug_tajmahal', 'sug_greatwall', 'sug_giza'] as const,
+  catSciFi:      ['sug_mars', 'sug_cyberpunk', 'sug_iss'] as const,
+  catChill:      ['sug_maldives', 'sug_paris', 'sug_kyoto'] as const,
 };
 
 const staticFilesUrl = 'https://www.gstatic.com/aistudio/starter-apps/pet_passport/';
@@ -1075,7 +1059,7 @@ export default function App() {
              <Plane className="w-6 h-6 text-[#D4AF37]" />
              <span className="font-display text-xl tracking-wider uppercase text-gray-900 dark:text-gray-100">MinikGezgin 🐾</span>
              {!hasStarted && (
-               <button onClick={() => setShowAboutModal(true)} className="ml-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:text-[#D4AF37] transition-colors border border-black/10 dark:border-white/10 rounded-full px-3 py-1">About</button>
+               <button onClick={() => setShowAboutModal(true)} className="ml-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:text-[#D4AF37] transition-colors border border-black/10 dark:border-white/10 rounded-full px-3 py-1">{t.about}</button>
              )}
           </div>
           <div className="flex items-center gap-4">
@@ -1419,15 +1403,13 @@ export default function App() {
               
               <div className="space-y-4 font-sans text-gray-600 dark:text-gray-300">
                 <p>
-                  <strong>MinikGezgin</strong> is your ultimate tool to transform everyday photos of your pets (and their favorite objects) into breathtaking travel memories. 
+                  <strong>MinikGezgin</strong> {t.aboutText1.replace('MinikGezgin is your ultimate tool to', '').replace('MinikGezgin,', '').trim()}
                 </p>
-                <p>
-                  Built to celebrate the adventurers in our lives, even if they never leave the backyard. We use cutting-edge generative AI to place your subjects into fully rendered, beautiful scenes anywhere in the world.
-                </p>
+                <p>{t.aboutText2}</p>
                 <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 rounded-xl mt-6">
-                  <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-[#D4AF37]" /> AI Model Powered</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-[#D4AF37]" /> {t.aiModelPowered}</h3>
                   <p className="text-sm">
-                    MinikGezgin leverages <strong>Gemini 3.1 Flash Image</strong> for generating extremely fast and visually stunning, highly photorealistic composite imagery based on your prompts and uploaded assets.
+                    {t.aboutAiText}
                   </p>
                 </div>
               </div>
@@ -1573,7 +1555,7 @@ export default function App() {
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white py-3 rounded-xl border border-black/10 dark:border-white/10 transition-all font-sans font-bold shadow-lg cursor-pointer"
                 >
-                  More Options...
+                  {t.moreOptions}
                 </button>
               </div>
             </motion.div>
@@ -1592,7 +1574,7 @@ export default function App() {
             onDrop={handleDrop}
           >
             <h2 className="text-2xl font-display mb-4 flex items-center justify-between text-gray-900 dark:text-white">
-              <span>1. Upload subjects {isDragging && <span className="text-sm ml-2 text-[#D4AF37]">Drop images here</span>}</span>
+              <span>{t.uploadSubjects} {isDragging && <span className="text-sm ml-2 text-[#D4AF37]">{t.dropImagesHere}</span>}</span>
             </h2>
             <h3 className="mb-4">
               <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37]">{characterCount}/10 {t.pets} • {objectCount}/20 {t.objects}</span>
@@ -1600,9 +1582,9 @@ export default function App() {
             
             <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {subjects.length === 0 && (
-                <div className="text-center py-8 border border-dashed border-black/10 dark:border-white/10 rounded-2xl bg-black/20">
-                  <Camera className="w-8 h-8 mx-auto mb-2 text-gray-500 dark:text-gray-400" />
-                  <p className="text-sm font-sans font-medium text-white dark:text-black/40 dark:text-white/40">No subjects added yet</p>
+                <div className="text-center py-8 border border-dashed border-black/10 dark:border-white/10 rounded-2xl bg-black/5 dark:bg-black/20">
+                  <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-gray-400" />
+                  <p className="text-sm font-sans font-medium text-gray-500 dark:text-white/40">{t.noSubjectsYet}</p>
                 </div>
               )}
               {subjects.map((s, idx) => (
@@ -1839,21 +1821,49 @@ export default function App() {
 
           <button 
             onClick={handleRestart}
-            className="w-full py-4 px-6 rounded-2xl border border-black/10 dark:border-white/10 font-display text-xl tracking-wider hover:bg-black/10 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:text-white transition-all flex items-center justify-center gap-2 glass-panel shadow-sm hover:shadow-md focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer"
+            className="w-full py-4 px-6 rounded-2xl border border-black/10 dark:border-white/10 font-display text-xl tracking-wider hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:text-white transition-all flex items-center justify-center gap-2 glass-panel shadow-sm hover:shadow-md focus:ring-2 focus:ring-[#D4AF37]/30 focus:outline-none cursor-pointer"
           >
             <RefreshCw className="w-5 h-5" />
-            Reset Adventure
+            {t.resetAdventure}
           </button>
+
+          {/* Mini Album Summary in left column */}
+          {destinations.filter(d => d.imageUrl).length > 0 && (
+            <div className="glass-panel p-4 rounded-2xl shadow-md">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-display font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#D4AF37]" />
+                  {t.album}
+                </h3>
+                <span className="text-xs font-bold text-[#D4AF37]">{destinations.filter(d => d.imageUrl).length}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {destinations.filter(d => d.imageUrl).slice(0,6).map(d => (
+                  <div key={d.id} className="aspect-square rounded-lg overflow-hidden bg-black/10 dark:bg-black/40">
+                    <img src={d.imageUrl!} alt={d.prompt} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+              {destinations.some(d => d.imageUrl) && (
+                <button
+                  onClick={handleOpenExport}
+                  className="w-full mt-3 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-[#D4AF37] py-2 rounded-xl border border-[#D4AF37]/30 hover:bg-[#D4AF37]/10 transition-colors"
+                >
+                  <Download className="w-3 h-3" /> {t.exportAlbum}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Column: Prompt & Results */}
         <div className="lg:col-span-8 space-y-8">
           <div className="tour-step-destination glass-panel p-6 sm:p-10 rounded-3xl shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-30"></div>
-            <div className="flex justify-between items-center mb-8 relative z-10">
-              <h2 className="text-2xl font-display text-gray-900 dark:text-white flex items-center gap-3">
-                <MapPin className="w-6 h-6 text-[#D4AF37]" />
-                2. Plan their Adventure
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8 relative z-10">
+              <h2 className="text-xl sm:text-2xl font-display text-gray-900 dark:text-white flex items-center gap-3">
+                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-[#D4AF37]" />
+                {t.planAdventure}
               </h2>
               <button 
                 onClick={() => setShowAdvanced(!showAdvanced)}
@@ -1866,13 +1876,13 @@ export default function App() {
             
             <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-3">Destination</label>
+                <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-3">{t.destination}</label>
                 <input
                   type="text"
                   value={currentDestination}
                   onChange={(e) => setCurrentDestination(e.target.value)}
-                  placeholder="e.g. The Great Wall of China"
-                  className="w-full bg-transparent border-b border-black/10 dark:border-white/10 py-3 text-2xl text-gray-900 dark:text-white focus:outline-none focus:border-[#D4AF37] font-sans font-medium hover:border-white/30 focus:ring-0 placeholder:text-white dark:text-black/20 dark:text-white/20 transition-colors"
+                  placeholder={t.destinationPlaceholder}
+                  className="w-full bg-transparent border-b border-black/20 dark:border-white/10 py-3 text-xl sm:text-2xl text-gray-900 dark:text-white focus:outline-none focus:border-[#D4AF37] font-sans font-medium focus:ring-0 placeholder:text-gray-400 dark:placeholder:text-white/20 transition-colors"
                   disabled={isGenerating}
                 />
               </div>
@@ -1883,12 +1893,12 @@ export default function App() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-3">Scene Description</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#D4AF37] mb-3">{t.sceneDescription}</label>
                   <textarea
                     value={currentDescription}
                     onChange={(e) => setCurrentDescription(e.target.value)}
-                    placeholder="Describe the scene, lighting, and what the subjects are doing..."
-                    className="w-full bg-black/40 border border-black/10 dark:border-white/10 rounded-2xl p-5 text-gray-900 dark:text-white min-h-[120px] focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 font-sans font-medium resize-none placeholder:text-white dark:text-black/20 dark:text-white/20 transition-all shadow-inner"
+                    placeholder={t.sceneDescPlaceholder}
+                    className="w-full bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-2xl p-5 text-gray-900 dark:text-white min-h-[120px] focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 font-sans font-medium resize-none placeholder:text-gray-400 dark:placeholder:text-white/20 transition-all shadow-inner"
                     disabled={isGenerating}
                   />
                 </motion.div>
@@ -1938,7 +1948,7 @@ export default function App() {
 
             <div className="tour-step-ai-ideas mt-8 pt-8 border-t border-black/10 dark:border-white/10 relative z-10">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-bold uppercase tracking-wider text-[#D4AF37]">Inspiration:</p>
+                <p className="text-sm font-bold uppercase tracking-wider text-[#D4AF37]">{t.inspiration}:</p>
                 <button
                   type="button"
                   onClick={generateSuggestions}
@@ -1946,7 +1956,7 @@ export default function App() {
                   className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white bg-[#D4AF37] px-3 py-1.5 rounded-full hover:bg-[#FBBF24] transition-colors focus:ring-2 focus:ring-[#D4AF37]/50 focus:outline-none cursor-pointer disabled:opacity-50"
                 >
                   {isGeneratingSuggestions ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                  Generate Ideas
+                  {t.generateIdeas}
                 </button>
               </div>
               
@@ -1993,74 +2003,74 @@ export default function App() {
                   ))}
                 </div>
               )}
+
+
+      {/* Full-width Travel Album below the two-column grid */}
+      {destinations.length > 0 && (
+        <div className="mt-12 pt-12 border-t border-black/10 dark:border-white/10">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
+            <h2 className="text-3xl sm:text-4xl font-display text-gray-900 dark:text-white">{t.album}</h2>
+            <div className="flex items-center gap-4">
+              {destinations.some(d => d.imageUrl) && (
+                <button 
+                  onClick={handleOpenExport}
+                  className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#D4AF37] hover:text-gray-900 dark:text-white border-b border-transparent hover:border-[#D4AF37] pb-1 transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  {t.exportAlbum}
+                </button>
+              )}
             </div>
           </div>
 
-          {destinations.length > 0 && (
-            <div className="pt-12">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
-                <h2 className="text-3xl sm:text-4xl font-display text-gray-900 dark:text-white">{t.album}</h2>
-                <div className="flex items-center gap-4">
-                  {destinations.some(d => d.imageUrl) && (
-                    <button 
-                      onClick={handleOpenExport}
-                      className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#D4AF37] hover:text-gray-900 dark:text-white border-b border-transparent hover:border-white pb-1 transition-all cursor-pointer"
-                    >
-                      <Download className="w-4 h-4" />
-                      {t.exportAlbum}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
                 <input
                   type="text"
-                  placeholder="Filter by location..."
+                  placeholder={t.filterByLocation}
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
-                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
+                  className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[140px] flex-1"
                 />
                 <input
                   type="text"
-                  placeholder="Subject name..."
+                  placeholder={t.subjectNameFilter}
                   value={subjectNameFilter}
                   onChange={(e) => setSubjectNameFilter(e.target.value)}
-                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[150px] flex-1"
+                  className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent min-w-[140px] flex-1"
                 />
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value as any)}
-                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="all" className="bg-white dark:bg-[#121217]">All Subjects</option>
-                  <option value="character" className="bg-white dark:bg-[#121217]">{t.pets}</option>
-                  <option value="object" className="bg-white dark:bg-[#121217]">{t.objects}</option>
+                  <option value="all">{t.allSubjects}</option>
+                  <option value="character">{t.pets}</option>
+                  <option value="object">{t.objects}</option>
                 </select>
                 <select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value as any)}
-                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="all" className="bg-white dark:bg-[#121217]">All Time</option>
-                  <option value="today" className="bg-white dark:bg-[#121217]">Today</option>
-                  <option value="week" className="bg-white dark:bg-[#121217]">This Week</option>
+                  <option value="all">{t.allTime}</option>
+                  <option value="today">{t.today}</option>
+                  <option value="week">{t.thisWeek}</option>
                 </select>
                 <select
                   value={historyViewMode}
                   onChange={(e) => setHistoryViewMode(e.target.value as any)}
-                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="all" className="bg-white dark:bg-[#121217]">Full History</option>
-                  <option value="favorites" className="bg-white dark:bg-[#121217]">Favorites Only</option>
+                  <option value="all">{t.fullHistory}</option>
+                  <option value="favorites">{t.favoritesOnly}</option>
                 </select>
                 <select
                   value={historySortOrder}
                   onChange={(e) => setHistorySortOrder(e.target.value as any)}
-                  className="bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
+                  className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl py-2 px-4 font-sans font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-transparent"
                 >
-                  <option value="newest" className="bg-white dark:bg-[#121217]">Newest First</option>
-                  <option value="oldest" className="bg-white dark:bg-[#121217]">Oldest First</option>
+                  <option value="newest">{t.newestFirst}</option>
+                  <option value="oldest">{t.oldestFirst}</option>
                 </select>
               </div>
 
@@ -2073,11 +2083,11 @@ export default function App() {
                         style={{ aspectRatio: dest.aspectRatio.replace(':', '/') }}
                       >
                         {dest.loading ? (
-                          <div className="absolute inset-0 bg-gray-200 dark:bg-black/40 animate-pulse rounded-xl flex flex-col items-center justify-center p-6 overflow-hidden">
-                            <div className="absolute inset-y-0 left-0 w-1/2 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/5 dark:via-white/5 to-transparent skew-x-[-20deg]" />
+                          <div className="absolute inset-0 bg-gray-100 dark:bg-black/40 animate-pulse rounded-xl flex flex-col items-center justify-center p-6 overflow-hidden">
+                            <div className="absolute inset-y-0 left-0 w-1/2 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-black/5 dark:via-white/5 to-transparent skew-x-[-20deg]" />
                             <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin mb-4 text-[#D4AF37] flex-shrink-0" />
                             <p className="font-sans font-medium text-sm sm:text-base text-gray-600 dark:text-gray-300 break-words text-center w-full max-w-[80%] line-clamp-3 mb-2 z-10 relative">
-                              Generating snap of {dest.prompt}
+                              {t.generatingSnap} {dest.prompt}
                             </p>
                             <div className="w-3/4 bg-gray-300 dark:bg-black/10 dark:bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden shadow-inner flex items-center justify-start border border-black/5 dark:border-white/5 z-10 relative">
                               <div className="bg-[#D4AF37] h-full transition-all duration-300" style={{ width: `${generateProgress}%` }}></div>
@@ -2086,7 +2096,7 @@ export default function App() {
                           </div>
                         ) : dest.error ? (
                           <div className="text-center text-red-400 px-6 py-8">
-                            <p className="font-bold mb-2">Adventure Failed</p>
+                            <p className="font-bold mb-2">{t.adventureFailed}</p>
                             <p className="text-sm opacity-80">{dest.error}</p>
                           </div>
                         ) : dest.imageUrl ? (
@@ -2124,23 +2134,23 @@ export default function App() {
                               onChange={(e) => {
                                 setDestinations(prev => prev.map(d => d.id === dest.id ? {...d, filter: e.target.value} : d));
                               }}
-                              className="bg-black/50 border border-black/10 dark:border-white/10 rounded-md py-1 px-2 text-xs font-sans text-gray-900 dark:text-white focus:outline-none"
+                              className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-md py-1 px-2 text-xs font-sans text-gray-900 dark:text-white focus:outline-none"
                             >
-                              <option value="none">No Filter</option>
-                              <option value="vintage">Vintage</option>
-                              <option value="retro">Retro</option>
-                              <option value="grayscale">Black and White</option>
+                              <option value="none">{t.noFilter}</option>
+                              <option value="vintage">{t.vintage}</option>
+                              <option value="retro">{t.retro}</option>
+                              <option value="grayscale">{t.blackWhite}</option>
                             </select>
                             <select 
                               value={dest.animation || 'none'}
                               onChange={(e) => {
                                 setDestinations(prev => prev.map(d => d.id === dest.id ? {...d, animation: e.target.value} : d));
                               }}
-                              className="bg-black/50 border border-black/10 dark:border-white/10 rounded-md py-1 px-2 text-xs font-sans text-gray-900 dark:text-white focus:outline-none"
+                              className="bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-md py-1 px-2 text-xs font-sans text-gray-900 dark:text-white focus:outline-none"
                             >
-                              <option value="none">Static</option>
-                              <option value="parallax">Parallax</option>
-                              <option value="shimmer">Shimmer</option>
+                              <option value="none">{t.staticAnim}</option>
+                              <option value="parallax">{t.parallax}</option>
+                              <option value="shimmer">{t.shimmer}</option>
                             </select>
                           </div>
                         )}
@@ -2148,14 +2158,14 @@ export default function App() {
                       <div className="mt-5 pt-4 border-t border-black/10 dark:border-white/10 flex items-center justify-between px-2">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37]">Gemini 3.1 Flash Image</span>
-                          <span className="text-[10px] font-mono text-white dark:text-black/40 dark:text-white/40">{new Date(parseInt(dest.id)).toLocaleString()}</span>
+                          <span className="text-[10px] font-mono text-gray-500 dark:text-white/40">{new Date(parseInt(dest.id)).toLocaleString()}</span>
                         </div>
                         {dest.imageUrl && (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => toggleFavoriteDestination(dest)}
-                              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 ${dest.isFavorite ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:bg-white/10 hover:text-gray-900 dark:text-white'}`}
-                              title={dest.isFavorite ? "Remove Favorite" : "Save as Favorite"}
+                              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 ${dest.isFavorite ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-gray-900 dark:text-white'}`}
+                              title={dest.isFavorite ? t.removeFavorite : t.saveAsFavorite}
                             >
                               <Heart className="w-4 h-4" fill={dest.isFavorite ? "currentColor" : "none"} />
                             </button>
@@ -2186,9 +2196,13 @@ export default function App() {
                 ))}
               </div>
             </div>
-          )}
+          </div>
         </div>
+      )}
       </div>
+    </div>
+    </div>
+    </div>
     </div>
     </>
       )}
