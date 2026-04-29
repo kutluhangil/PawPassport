@@ -102,9 +102,16 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+// Lazy AI client — avoids crash when GEMINI_API_KEY is not set at module load time
+let _ai: GoogleGenAI | null = null;
+function getAI(): GoogleGenAI {
+  if (!_ai) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) throw new Error('GEMINI_API_KEY is not configured. Please set it in your Vercel environment variables.');
+    _ai = new GoogleGenAI({ apiKey: key });
+  }
+  return _ai;
+}
 
 type Subject = {
   id: string;
@@ -568,12 +575,8 @@ export default function App() {
     }
     setIsGeneratingSuggestions(true);
     try {
-      const keySelected = await (window as any).aistudio?.hasSelectedApiKey();
-      if (!keySelected) {
-        setShowKeyDialog(true);
-        setIsGeneratingSuggestions(false);
-        return;
-      }
+      // window.aistudio is only available in Google AI Studio, not on Vercel.
+      // We rely on the GEMINI_API_KEY env var directly.
 
       const pets = subjects.filter(s => s.type === 'character').map(s => s.name).join(', ') || 'a pet';
       const objects = subjects.filter(s => s.type === 'object').map(s => s.name).join(', ') || 'some items';
@@ -582,7 +585,7 @@ export default function App() {
         promptText += ` Focus around the destination: ${currentDestination}.`;
       }
 
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: "gemini-2.5-flash",
         contents: promptText
       });
@@ -848,13 +851,8 @@ export default function App() {
     }, 500);
 
     try {
-      // Final key check before spending tokens
-      const keySelected = await (window as any).aistudio?.hasSelectedApiKey();
-      if (!keySelected) {
-        setShowKeyDialog(true);
-        return;
-      }
-
+      // window.aistudio is only available in Google AI Studio, not on Vercel.
+      // Key validation is handled via the GEMINI_API_KEY environment variable.
       const config = {
         imageConfig: {
           aspectRatio: selectedAspectRatio,
@@ -901,7 +899,7 @@ export default function App() {
       ];
 
       // @ts-ignore - Using internal model name
-      const response = await ai.models.generateContentStream({
+      const response = await getAI().models.generateContentStream({
         model: "gemini-3.1-flash-image-preview",
         config,
         contents,
