@@ -1,21 +1,21 @@
 <div align="center">
 
 ```
-██████╗  █████╗ ██╗    ██╗██████╗  █████╗ ███████╗███████╗██████╗  ██████╗ ██████╗ ████████╗
-██╔══██╗██╔══██╗██║    ██║██╔══██╗██╔══██╗██╔════╝██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝
-██████╔╝███████║██║ █╗ ██║██████╔╝███████║███████╗███████╗██████╔╝██║   ██║██████╔╝   ██║   
-██╔═══╝ ██╔══██║██║███╗██║██╔═══╝ ██╔══██║╚════██║╚════██║██╔═══╝ ██║   ██║██╔══██╗   ██║   
-██║     ██║  ██║╚███╔███╔╝██║     ██║  ██║███████║███████║██║     ╚██████╔╝██║  ██║   ██║   
-╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   
+ /\_____/\
+(  🐱  🐱 )    M i n i k   G e z g i n
+ ( o   o )   ~~~~~~~~~~~~~~~~~~~~~~~~
+  =( Y )=    Küçük Patilerle Büyük Maceralar
+   )   (
+  (_)-(_)
 ```
 
-### Global Adventures, Without Leaving Home.
+### 🐾 Küçük Patilerle Büyük Maceralar
 
-*Transform everyday photos of your pets into breathtaking travel memories using AI.*
+*Evcil hayvanlarınızın günlük fotoğraflarını nefes kesici seyahat anılarına dönüştürün. AI ile.*
 
 ---
 
-[![Version](https://img.shields.io/badge/version-1.0.0-C8FF00?style=flat-square&labelColor=0A0A0B)](https://github.com/kutluhangil/PatiPasaport)
+[![Version](https://img.shields.io/badge/version-1.0.0-C8FF00?style=flat-square&labelColor=0A0A0B)](https://github.com/kutluhangil/MinikGezgin)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white&labelColor=0A0A0B)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-white?style=flat-square&logo=react&logoColor=white&labelColor=0A0A0B)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white&labelColor=0A0A0B)](https://tailwindcss.com/)
@@ -25,21 +25,21 @@
 
 ---
 
-[**Uygulamaya Git**](https://freelora.app) · [**Hata Bildir**](https://github.com/kutluhangil/PatiPasaport/issues) · [**Özellik İste**](https://github.com/kutluhangil/PatiPasaport/issues/new)
+[**Uygulamaya Git**](https://freelora.app) · [**Hata Bildir**](https://github.com/kutluhangil/MinikGezgin/issues) · [**Özellik İste**](https://github.com/kutluhangil/MinikGezgin/issues/new)
 
 </div>
 
 ---
 
-## PatiPasaport Nedir?
+## MinikGezgin Nedir?
 
 <details open>
 <summary><strong>Türkçe Açıklama</strong></summary>
 <br>
 
-PatiPasaport, evcil hayvanlarınızın günlük fotoğraflarını nefes kesici seyahat anılarına dönüştürmenizi sağlayan bir yapay zeka web uygulamasıdır. Google'ın güçlü **Gemini Flash Image** modelini kullanarak, evcil hayvanlarınızı Paris'ten Mars'a kadar hayal edebileceğiniz her yere gönderebilirsiniz.
+MinikGezgin 🐾, evcil hayvanlarınızın günlük fotoğraflarını nefes kesici seyahat anılarına dönüştürmenizi sağlayan bir yapay zeka web uygulamasıdır. Google'ın güçlü **Gemini Flash Image** modelini kullanarak, evcil hayvanlarınızı Paris'ten Mars'a kadar hayal edebileceğiniz her yere gönderebilirsiniz.
 
-**Neden PatiPasaport?**
+**Neden MinikGezgin?**
 - Evden çıkmadan dünyanın her yerinde (ve uzayda!) fotoğraflar oluşturun
 - Kendi evcil hayvanlarınızı (Pet) ve eşyalarınızı (Object) sisteme tanıtın
 - Yapay zeka ile mükemmel aydınlatma, gölgelendirme ve arka plana uyum
@@ -47,7 +47,7 @@ PatiPasaport, evcil hayvanlarınızın günlük fotoğraflarını nefes kesici s
 
 </details>
 
-PatiPasaport is an AI-powered web application that lets you transform everyday photos of your pets into breathtaking travel memories. Powered by Google's **Gemini Flash Image** model, you can send your pets anywhere—from Paris to Mars.
+MinikGezgin 🐾 is an AI-powered web application that lets you transform everyday photos of your pets into breathtaking travel memories. Powered by Google's **Gemini Flash Image** model, you can send your pets anywhere—from Paris to Mars.
 
 ---
 
@@ -119,15 +119,15 @@ Infrastructure
 
 ```bash
 # Repoyu klonla
-git clone https://github.com/kutluhangil/PatiPasaport.git
-cd PatiPasaport
+git clone https://github.com/kutluhangil/MinikGezgin.git
+cd MinikGezgin
 
 # Bağımlılıkları yükle
 npm install
 
 # Environment dosyasını oluştur
 cp .env.example .env.local
-# .env.local dosyasına değişkenlerini ekle (Supabase/Firebase ve API Key)
+# .env.local dosyasına değişkenlerini ekle (Firebase ve Gemini API Key)
 
 # Geliştirme sunucusunu başlat
 npm run dev
@@ -196,10 +196,10 @@ Bu proje [MIT Lisansı](LICENSE) altında dağıtılmaktadır.
 
 <div align="center">
 
-**Built with precision by [kutluhangil](https://github.com/kutluhangil/PatiPasaport)**
+🐾 **Built with love by [kutluhangil](https://github.com/kutluhangil/MinikGezgin)** 🐾
 
-*Evcil hayvanlarımızın dünyayı gezmesi için yapıldı.*
+*Minik patilerin büyük maceraları için yapıldı.*
 
-[![GitHub](https://img.shields.io/badge/GitHub-kutluhangil-C8FF00?style=flat-square&logo=github&logoColor=white&labelColor=0A0A0B)](https://github.com/kutluhangil/PatiPasaport)
+[![GitHub](https://img.shields.io/badge/GitHub-kutluhangil-C8FF00?style=flat-square&logo=github&logoColor=white&labelColor=0A0A0B)](https://github.com/kutluhangil/MinikGezgin)
 
 </div>

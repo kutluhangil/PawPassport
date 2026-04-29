@@ -209,14 +209,14 @@ export default function App() {
   const [lang, setLang] = useState<'en' | 'tr'>('tr');
   const t = dict[lang];
   const [subjects, setSubjects] = useState<Subject[]>(() => {
-    const saved = localStorage.getItem('pawpassport-subjects');
+    const saved = localStorage.getItem('minikgezgin-subjects');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { return []; }
     }
     return [];
   });
   const [destinations, setDestinations] = useState<Adventure[]>(() => {
-    const saved = localStorage.getItem('pawpassport-destinations');
+    const saved = localStorage.getItem('minikgezgin-destinations');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { return []; }
     }
@@ -241,8 +241,8 @@ export default function App() {
     setPastDestinations(p => [...p, destinations]);
     setDestinations(next);
   };
-  const [currentDestination, setCurrentDestination] = useState(() => localStorage.getItem('pawpassport-draft-destination') || '');
-  const [currentDescription, setCurrentDescription] = useState(() => localStorage.getItem('pawpassport-draft-description') || '');
+  const [currentDestination, setCurrentDestination] = useState(() => localStorage.getItem('minikgezgin-draft-destination') || '');
+  const [currentDescription, setCurrentDescription] = useState(() => localStorage.getItem('minikgezgin-draft-description') || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState('');
@@ -250,11 +250,11 @@ export default function App() {
   const [seed, setSeed] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'passport'>('grid');
   const [hasStarted, setHasStarted] = useState(() => {
-    return localStorage.getItem('pawpassport-started') === 'true';
+    return localStorage.getItem('minikgezgin-started') === 'true';
   });
 
   const [subjectPresets, setSubjectPresets] = useState<{name: string, subjects: Subject[]}[]>(() => {
-    const saved = localStorage.getItem('pawpassport-subject-presets');
+    const saved = localStorage.getItem('minikgezgin-subject-presets');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { return []; }
     }
@@ -266,12 +266,12 @@ export default function App() {
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('pawpassport-theme') as 'dark'|'light') || 'dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('minikgezgin-theme') as 'dark'|'light') || 'dark');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [cropTargetId, setCropTargetId] = useState<string | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('pawpassport-theme', theme);
+    localStorage.setItem('minikgezgin-theme', theme);
     if (theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [theme]);
@@ -327,7 +327,7 @@ export default function App() {
   const handleLogout = () => signOut(auth);
 
   const [runTour, setRunTour] = useState(() => {
-    return localStorage.getItem('pawpassport-tour-seen') !== 'true';
+    return localStorage.getItem('minikgezgin-tour-seen') !== 'true';
   });
 
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week'>('all');
@@ -353,11 +353,11 @@ export default function App() {
 
   // Drafts
   useEffect(() => {
-    localStorage.setItem('pawpassport-draft-destination', currentDestination);
+    localStorage.setItem('minikgezgin-draft-destination', currentDestination);
   }, [currentDestination]);
 
   useEffect(() => {
-    localStorage.setItem('pawpassport-draft-description', currentDescription);
+    localStorage.setItem('minikgezgin-draft-description', currentDescription);
   }, [currentDescription]);
 
   const handleJoyrideCallback = (data: any) => {
@@ -365,7 +365,7 @@ export default function App() {
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
     if (finishedStatuses.includes(status)) {
       setRunTour(false);
-      localStorage.setItem('pawpassport-tour-seen', 'true');
+      localStorage.setItem('minikgezgin-tour-seen', 'true');
     }
   };
 
@@ -398,7 +398,7 @@ export default function App() {
   ];
 
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [exportName, setExportName] = useState('pawpassport_album');
+  const [exportName, setExportName] = useState('minikgezgin_album');
   const [exportFormat, setExportFormat] = useState<'zip' | 'pdf'>('zip');
   const [exportIncludeDescriptions, setExportIncludeDescriptions] = useState(true);
   const [exportSelectedIds, setExportSelectedIds] = useState<string[]>([]);
@@ -476,7 +476,7 @@ export default function App() {
           pdf.setTextColor('#D4AF37'); // Gold Text
           pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(22);
-          pdf.text("PatiPasaport Official Visa", 10, 20);
+          pdf.text("MinikGezgin Official Visa", 10, 20);
 
           // Add Image like a stamp
           pdf.addImage(base64, 'JPEG', 10, 30, 90, 90); 
@@ -504,7 +504,7 @@ export default function App() {
           pdf.setFont('courier', 'bold');
           pdf.setFontSize(11);
           pdf.setTextColor('#555555');
-          const str1 = `P<PAW${dest.prompt.substring(0, 20).toUpperCase().replace(/[^A-Z]/g, '<')}<<<<<<<<<<<<<<<<<<<<<<`;
+          const str1 = `P<MGZ${dest.prompt.substring(0, 20).toUpperCase().replace(/[^A-Z]/g, '<')}<<<<<<<<<<<<<<<<<<<<<<<`;
           const str2 = `A1B2C3D4E5${new Date().getFullYear()}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<`;
           pdf.text(str1.substring(0, 44), 10, 138);
           pdf.text(str2.substring(0, 44), 10, 145);
@@ -602,9 +602,9 @@ export default function App() {
   
   // Save to localStorage & Firestore effects
   useEffect(() => {
-    localStorage.setItem('pawpassport-subjects', JSON.stringify(subjects));
+    localStorage.setItem('minikgezgin-subjects', JSON.stringify(subjects));
     if (subjects.length > 0) {
-      localStorage.setItem('pawpassport-started', 'true');
+      localStorage.setItem('minikgezgin-started', 'true');
       setHasStarted(true);
     }
     if (currentUser) {
@@ -613,7 +613,7 @@ export default function App() {
   }, [subjects, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('pawpassport-destinations', JSON.stringify(destinations));
+    localStorage.setItem('minikgezgin-destinations', JSON.stringify(destinations));
     if (currentUser) {
       setDoc(doc(db, 'users', currentUser.uid, 'data', 'appData'), { destinations }, { merge: true }).catch(err => console.error(err));
     }
@@ -967,7 +967,7 @@ export default function App() {
     }
   };
 
-  const handleDownloadImage = (url: string, prefix: string = 'pet-passport', format: 'png' | 'jpeg' = 'png') => {
+  const handleDownloadImage = (url: string, prefix: string = 'minikgezgin', format: 'png' | 'jpeg' = 'png') => {
     const link = document.createElement('a');
     if (format === 'jpeg' && url.startsWith('data:image/png')) {
       const img = new Image();
@@ -1000,9 +1000,9 @@ export default function App() {
       try {
         const response = await fetch(url);
         const blob = await response.blob();
-        const file = new File([blob], 'pet-passport.png', { type: 'image/png' });
+        const file = new File([blob], 'minikgezgin.png', { type: 'image/png' });
         await navigator.share({
-          title: `PatiPasaport: ${title}`,
+          title: `MinikGezgin: ${title}`,
           text: `Check out my pet's adventure to ${title}!`,
           files: [file]
         });
@@ -1018,7 +1018,7 @@ export default function App() {
   const handleDownloadAlbum = () => {
     destinations.forEach((dest, index) => {
       if (dest.imageUrl) {
-        handleDownloadImage(dest.imageUrl, `pet-passport-${index + 1}`);
+        handleDownloadImage(dest.imageUrl, `minikgezgin-${index + 1}`);
       }
     });
   };
@@ -1029,9 +1029,9 @@ export default function App() {
     setCurrentDestination('');
     setCurrentDescription('');
     setHasStarted(false);
-    localStorage.removeItem('pawpassport-started');
-    localStorage.removeItem('pawpassport-subjects');
-    localStorage.removeItem('pawpassport-destinations');
+    localStorage.removeItem('minikgezgin-started');
+    localStorage.removeItem('minikgezgin-subjects');
+    localStorage.removeItem('minikgezgin-destinations');
   };
 
   const [isKeyLoading, setIsKeyLoading] = useState(false);
@@ -1075,7 +1075,7 @@ export default function App() {
         <nav className="relative z-20 flex justify-between items-center py-6 px-4 md:px-8 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
              <Plane className="w-6 h-6 text-[#D4AF37]" />
-             <span className="font-display text-xl tracking-wider uppercase text-gray-900 dark:text-gray-100">PatiPasaport</span>
+             <span className="font-display text-xl tracking-wider uppercase text-gray-900 dark:text-gray-100">MinikGezgin 🐾</span>
              {!hasStarted && (
                <button onClick={() => setShowAboutModal(true)} className="ml-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:text-[#D4AF37] transition-colors border border-black/10 dark:border-white/10 rounded-full px-3 py-1">About</button>
              )}
@@ -1314,10 +1314,10 @@ export default function App() {
           <Plane className="w-6 h-6 text-[#D4AF37]" />
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none font-display text-transparent bg-clip-text bg-gradient-to-br from-[#FAFAFA] to-white/40">
-          PatiPasaport
+          MinikGezgin 🐾
         </h1>
         <p className="text-lg md:text-xl font-sans font-medium text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mt-2">
-          Send your furry friends on a global adventure with Gemini 3.1 Flash Image
+          Küçük patileri büyük maceralara taşı — Gemini 3.1 Flash Image ile
         </p>
       </header>
 
@@ -1387,7 +1387,7 @@ export default function App() {
                   className="w-full flex items-center justify-center gap-2 bg-[#D4AF37] hover:bg-[#FBBF24] text-gray-900 dark:text-white py-4 rounded-xl font-display font-medium text-xl tracking-wider transition-all disabled:opacity-50 focus:ring-4 focus:ring-[#D4AF37]/30 focus:outline-none"
                 >
                   {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
-                  {isExporting ? `Exporting (${exportProgress}%)` : `Export ${exportSelectedIds.length} Items`}
+                  {isExporting ? `Export (${exportProgress}%)` : `Export ${exportSelectedIds.length} Items`}
                 </button>
               </div>
             </motion.div>
@@ -1416,12 +1416,12 @@ export default function App() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] mb-4 border border-[#D4AF37]/30">
                   <Plane className="w-8 h-8" />
                 </div>
-                <h2 className="text-3xl font-display text-gray-900 dark:text-white">PatiPasaport</h2>
+                <h2 className="text-3xl font-display text-gray-900 dark:text-white">MinikGezgin 🐾</h2>
               </div>
               
               <div className="space-y-4 font-sans text-gray-600 dark:text-gray-300">
                 <p>
-                  <strong>PatiPasaport</strong> is your ultimate tool to transform everyday photos of your pets (and their favorite objects) into breathtaking travel memories. 
+                  <strong>MinikGezgin</strong> is your ultimate tool to transform everyday photos of your pets (and their favorite objects) into breathtaking travel memories. 
                 </p>
                 <p>
                   Built to celebrate the adventurers in our lives, even if they never leave the backyard. We use cutting-edge generative AI to place your subjects into fully rendered, beautiful scenes anywhere in the world.
@@ -1429,7 +1429,7 @@ export default function App() {
                 <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-4 rounded-xl mt-6">
                   <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-[#D4AF37]" /> AI Model Powered</h3>
                   <p className="text-sm">
-                    PatiPasaport leverages <strong>Gemini 3.1 Flash Image</strong> for generating extremely fast and visually stunning, highly photorealistic composite imagery based on your prompts and uploaded assets.
+                    MinikGezgin leverages <strong>Gemini 3.1 Flash Image</strong> for generating extremely fast and visually stunning, highly photorealistic composite imagery based on your prompts and uploaded assets.
                   </p>
                 </div>
               </div>
@@ -1537,7 +1537,7 @@ export default function App() {
               <div className="space-y-3">
                 <button 
                   onClick={() => {
-                    const text = encodeURIComponent(`Check out my pet's adventure to ${sharingDestination.prompt}! #pawpassport #petadventures #aigenerated`);
+                    const text = encodeURIComponent(`Check out my pet's adventure to ${sharingDestination.prompt}! 🐾 #minikgezgin #petadventures #aigenerated`);
                     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1A91DA] text-gray-900 dark:text-white py-3 rounded-xl transition-all font-sans font-bold shadow-lg cursor-pointer"
@@ -1546,7 +1546,7 @@ export default function App() {
                 </button>
                 <button 
                   onClick={async () => {
-                    handleDownloadImage(sharingDestination.imageUrl!, `pawpassport-${sharingDestination.id}`);
+                    handleDownloadImage(sharingDestination.imageUrl!, `minikgezgin-${sharingDestination.id}`);
                     addToast("Image downloaded! You can now open Instagram and post it.", "success");
                     setSharingDestination(null);
                   }}
@@ -1560,10 +1560,10 @@ export default function App() {
                       try {
                         const response = await fetch(sharingDestination.imageUrl!);
                         const blob = await response.blob();
-                        const file = new File([blob], 'pawpassport.png', { type: 'image/png' });
+                        const file = new File([blob], 'minikgezgin.png', { type: 'image/png' });
                         await navigator.share({
-                          title: `PatiPasaport: ${sharingDestination.prompt}`,
-                          text: `Check out my pet's adventure to ${sharingDestination.prompt}! #pawpassport #petadventures`,
+                          title: `MinikGezgin: ${sharingDestination.prompt}`,
+                          text: `Check out my pet's adventure to ${sharingDestination.prompt}! 🐾 #minikgezgin #petadventures`,
                           files: [file]
                         });
                       } catch (err) {
@@ -1707,7 +1707,7 @@ export default function App() {
                       if(name) {
                         const newPresets = [...subjectPresets, {name, subjects}];
                         setSubjectPresets(newPresets);
-                        localStorage.setItem('pawpassport-subject-presets', JSON.stringify(newPresets));
+                        localStorage.setItem('minikgezgin-subject-presets', JSON.stringify(newPresets));
                         addToast(`${t.presetSaved.replace('!', '')} "${name}"!`, 'success');
                       }
                    }}
@@ -1728,7 +1728,7 @@ export default function App() {
                            <button onClick={() => {
                              const newPresets = subjectPresets.filter((_, i) => i !== idx);
                              setSubjectPresets(newPresets);
-                             localStorage.setItem('pawpassport-subject-presets', JSON.stringify(newPresets));
+                             localStorage.setItem('minikgezgin-subject-presets', JSON.stringify(newPresets));
                            }} className="text-red-400 hover:text-red-300">{t.del}</button>
                         </div>
                       </div>
