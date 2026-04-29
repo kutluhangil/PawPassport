@@ -2007,7 +2007,7 @@ export default function App() {
                           const raw = (t[slug as keyof typeof t] as string) || slug;
                           const petName = subjects.find(s => s.type === 'character')?.name;
                           const displaySuggestion = petName
-                            ? raw.replace(/Evcil hayvanım|My pet/g, petName)
+                            ? raw.replace('Evcil hayvan\u0131m', petName).replace('My pet', petName)
                             : raw;
                           return (
                             <button
