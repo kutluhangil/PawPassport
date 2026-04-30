@@ -4,24 +4,22 @@
  * MinikGezgin v1.1.0 — Refactor & Feature Pack
 */
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import { 
-  Upload, 
-  MapPin, 
-  Download, 
-  RefreshCw, 
-  Loader2, 
-  Plane, 
-  Camera, 
-  Plus, 
-  Trash2, 
+import {
+  Upload,
+  MapPin,
+  Download,
+  RefreshCw,
+  Loader2,
+  Plane,
+  Camera,
+  Plus,
+  Trash2,
   Settings,
   X,
   Share2,
   Wand2,
-  Music,
-  VolumeX,
   Heart,
   Check,
   Sparkles,
@@ -30,7 +28,9 @@ import {
   CheckSquare,
   Square,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  Github,
+  Linkedin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, db } from './lib/firebase';
@@ -126,8 +126,6 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.5);
   const [bgAccent, setBgAccent] = useState('#D4AF37');
 
   // Album Filters & Management
@@ -135,8 +133,6 @@ export default function App() {
   const [historyViewMode, setHistoryViewMode] = useState<'all' | 'favorites'>('all');
   const [selectedAlbumIds, setSelectedAlbumIds] = useState<string[]>([]);
   const [isBulkMode, setIsBulkMode] = useState(false);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Dynamic Background Effect
   useEffect(() => {
@@ -292,17 +288,6 @@ export default function App() {
       return true;
     });
   }, [destinations, locationFilter, historyViewMode]);
-
-  const toggleMusic = () => {
-    if (audioRef.current) {
-      if (isMusicPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(console.error);
-      }
-      setIsMusicPlaying(!isMusicPlaying);
-    }
-  };
 
   return (
     <div className="min-h-screen transition-colors duration-700">
@@ -609,11 +594,29 @@ export default function App() {
 
       <footer className="py-10 border-t border-black/5 dark:border-white/5 text-center text-gray-400 text-xs">
         <p>© 2026 MinikGezgin • {t.poweredBy}</p>
-        <div className="mt-4 flex items-center justify-center gap-4">
-          <button onClick={toggleMusic} className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:text-[#D4AF37] transition-colors cursor-pointer">
-            {isMusicPlaying ? <Music className="w-4 h-4 animate-bounce" /> : <VolumeX className="w-4 h-4" />}
-          </button>
-          <audio ref={audioRef} loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/theme_01.mp3" />
+        <p className="mt-3">
+          Designed by{' '}
+          <span className="font-semibold text-gray-600 dark:text-gray-300">kutluhangil</span>
+        </p>
+        <div className="mt-4 flex items-center justify-center gap-5">
+          <a
+            href="https://github.com/kutluhangil?tab=repositories"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            className="text-gray-500 hover:text-[#D4AF37] transition-colors"
+          >
+            <Github className="w-4 h-4" />
+          </a>
+          <a
+            href="https://www.linkedin.com/in/kutluhangil/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LinkedIn"
+            className="text-gray-500 hover:text-[#D4AF37] transition-colors"
+          >
+            <Linkedin className="w-4 h-4" />
+          </a>
         </div>
       </footer>
 
