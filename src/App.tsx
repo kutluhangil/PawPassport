@@ -632,11 +632,71 @@ export default function App() {
                 <X className="w-6 h-6" />
               </button>
               <h2 className="text-3xl font-display text-gray-900 dark:text-white mb-6">About MinikGezgin</h2>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed space-y-4">
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                 {t.aboutText1}
                 <br/><br/>
                 {t.aboutText2}
               </p>
+
+              {/* About the Developer */}
+              <div className="mt-10 pt-8 border-t border-black/10 dark:border-white/10">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+                    Meet the Developer
+                  </span>
+                  <span className="flex-1 h-px bg-gradient-to-r from-[#D4AF37]/40 to-transparent" />
+                </div>
+
+                <h3 className="text-2xl font-display text-gray-900 dark:text-white mb-1">
+                  Hi, I'm <span className="italic text-[#D4AF37]">Kutluhan</span>
+                </h3>
+                <p className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-5">
+                  Full-Stack Developer · Istanbul
+                </p>
+
+                <div className="space-y-4 text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                  <p>
+                    I build modern web applications with{' '}
+                    <span className="font-semibold text-gray-800 dark:text-gray-100">
+                      React, Next.js, TypeScript, and Node.js
+                    </span>
+                    . After 2.5+ years at Amazon as a Senior Selling Partner Support
+                    Associate — solving complex technical issues for sellers across
+                    European marketplaces — I made a deliberate shift into software
+                    development in 2024.
+                  </p>
+                  <p>
+                    Today, I focus on building clean, scalable, and user-centered SaaS
+                    products — from appointment platforms to analytics tools and finance
+                    dashboards. I care about responsive design, thoughtful architecture,
+                    and shipping things that actually work. With 8+ years of
+                    international experience behind me, I bring a disciplined,
+                    problem-solving mindset to every project I take on.
+                  </p>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <a
+                    href="https://github.com/kutluhangil?tab=repositories"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-xs font-semibold uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:border-[#D4AF37]/50 hover:text-[#D4AF37] transition-all"
+                  >
+                    <Github className="w-4 h-4" />
+                    GitHub
+                  </a>
+                  <a
+                    href="https://www.linkedin.com/in/kutluhangil/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-xs font-semibold uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:border-[#D4AF37]/50 hover:text-[#D4AF37] transition-all"
+                  >
+                    <Linkedin className="w-4 h-4" />
+                    LinkedIn
+                  </a>
+                </div>
+              </div>
+
               <div className="mt-8 flex justify-end">
                 <button onClick={() => setShowAboutModal(false)} className="px-8 py-3 bg-[#D4AF37] text-gray-900 rounded-xl font-bold cursor-pointer hover:scale-105 transition-transform">{t.close}</button>
               </div>
