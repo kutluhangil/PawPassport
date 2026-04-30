@@ -1,6 +1,5 @@
 import React from 'react';
 import { Plane, Sun, Moon } from 'lucide-react';
-import { User } from 'firebase/auth';
 
 interface NavigationProps {
   t: any;
@@ -8,10 +7,8 @@ interface NavigationProps {
   setLang: (lang: 'en' | 'tr') => void;
   theme: 'dark' | 'light';
   setTheme: (theme: 'dark' | 'light') => void;
-  currentUser: User | null;
   hasStarted: boolean;
   setHasStarted: (val: boolean) => void;
-  onLogin: () => void;
   onShowAbout: () => void;
 }
 
@@ -21,20 +18,25 @@ export default function Navigation({
   setLang,
   theme,
   setTheme,
-  currentUser,
   hasStarted,
   setHasStarted,
-  onLogin,
   onShowAbout
 }: NavigationProps) {
   return (
     <nav className="relative z-20 flex justify-between items-center py-6 px-4 md:px-8 max-w-7xl mx-auto">
       <div className="flex items-center gap-3">
-        <Plane className="w-6 h-6 text-[#D4AF37]" />
-        <span className="font-display text-xl tracking-wider uppercase text-gray-900 dark:text-gray-100">MinikGezgin 🐾</span>
+        <button
+          onClick={() => setHasStarted(false)}
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          aria-label="Go to home"
+          title="Anasayfa"
+        >
+          <Plane className="w-6 h-6 text-[#D4AF37]" />
+          <span className="font-display text-xl tracking-wider uppercase text-gray-900 dark:text-gray-100">MinikGezgin 🐾</span>
+        </button>
         {!hasStarted && (
-          <button 
-            onClick={onShowAbout} 
+          <button
+            onClick={onShowAbout}
             className="ml-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:text-[#D4AF37] transition-colors border border-black/10 dark:border-white/10 rounded-full px-3 py-1 cursor-pointer"
           >
             {t.about}
@@ -71,22 +73,6 @@ export default function Navigation({
           }
         </button>
 
-        {/* Auth / Action Button */}
-        {currentUser ? (
-          <button 
-            onClick={() => setHasStarted(true)} 
-            className="nav-pill text-[#D4AF37] border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 cursor-pointer transition whitespace-nowrap"
-          >
-            {t.enterStudio}
-          </button>
-        ) : (
-          <button 
-            onClick={onLogin} 
-            className="nav-pill hover:bg-black/5 dark:bg-white/5 cursor-pointer transition text-gray-900 dark:text-white whitespace-nowrap"
-          >
-            {t.signIn}
-          </button>
-        )}
       </div>
     </nav>
   );

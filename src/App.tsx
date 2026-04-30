@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, db } from './lib/firebase';
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, doc, setDoc, query, onSnapshot, deleteDoc, writeBatch } from 'firebase/firestore';
 
 // Types & Components
@@ -191,17 +191,6 @@ export default function App() {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
   };
 
-  const handleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      addToast('Failed to sign in', 'error');
-    }
-  };
-
-  const handleLogout = () => signOut(auth);
-
   const generateAdventure = async (destination: string, description: string) => {
     if (subjects.length === 0) return;
 
@@ -316,7 +305,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-700 bg-white dark:bg-[#0a0a0c] selection:bg-[${bgAccent}]/30 selection:text-[${bgAccent}]`}>
+    <div className="min-h-screen transition-colors duration-700">
       <ToastContainer toasts={toasts} />
       
       {/* Dynamic Aura Background */}
@@ -331,10 +320,10 @@ export default function App() {
         />
       </div>
 
-      <Navigation 
-        t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} 
-        currentUser={currentUser} hasStarted={hasStarted} setHasStarted={setHasStarted} 
-        onLogin={handleLogin} onShowAbout={() => setShowAboutModal(true)}
+      <Navigation
+        t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
+        hasStarted={hasStarted} setHasStarted={setHasStarted}
+        onShowAbout={() => setShowAboutModal(true)}
       />
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pb-20 pt-8">
