@@ -79,7 +79,7 @@ export default function UserProfileModal({ user, onClose, onUpdate }: UserProfil
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-gray-900 dark:bg-white dark:bg-[#121217] rounded-3xl p-8 w-full max-w-md border border-black/10 dark:border-white/10 shadow-2xl flex flex-col relative">
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-8 w-full max-w-md border border-black/10 dark:border-white/10 shadow-2xl flex flex-col relative">
         <button onClick={onClose} className="absolute top-6 right-6 p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-black/10 dark:bg-white/10 rounded-full transition-colors">
           <X className="w-5 h-5" />
         </button>

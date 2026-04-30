@@ -65,10 +65,10 @@ export default function CropModal({ imageUrl, onClose, onCropSave }: CropModalPr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-gray-900 dark:bg-white dark:bg-[#121217] rounded-3xl p-6 w-full max-w-lg border border-black/10 dark:border-white/10 shadow-2xl flex flex-col h-[80vh] max-h-[600px]">
+      <div className="bg-white dark:bg-[#121217] rounded-3xl p-8 w-full max-w-md border border-black/10 dark:border-white/10 shadow-2xl flex flex-col relative">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-display text-gray-900 dark:text-white">Crop Image</h2>
-          <button onClick={onClose} className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-black/10 dark:bg-white/10 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
